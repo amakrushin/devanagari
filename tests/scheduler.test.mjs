@@ -92,6 +92,23 @@ test('BuildSessionCapsAtFifteenQuestions', () => {
     assert.equal(sched.buildSession(progress, data, NOW).length, 15);
 });
 
+test('BuildSessionWithGroupIndexUsesOnlyThatGroup', () => {
+    const progress = metProgress(1, 0);
+    const digits = new Set(data.groups[1].chars.map(c => c.slug));
+    const queue = sched.buildSession(progress, data, NOW, {groupIndex: 1});
+    assert.equal(queue.length, digits.size);
+    for (const item of queue)
+        assert.ok(digits.has(item.slug), `slug ${item.slug} is outside the selected group`);
+});
+
+test('BuildSessionWithGroupIndexIntroducesOnlyItsCharacters', () => {
+    const progress = sched.initProgress();
+    progress.activeGroup = 1;
+    const queue = sched.buildSession(progress, data, NOW, {groupIndex: 1});
+    assert.deepEqual(queue.map(item => item.slug), ['d0', 'd1', 'd2']);
+    assert.ok(queue.every(item => item.isNew));
+});
+
 test('TryUnlockAdvancesWhenActiveGroupLearned', () => {
     const progress = metProgress(0, sched.LEARNED_BOX);
     const opened = sched.tryUnlock(progress, data);

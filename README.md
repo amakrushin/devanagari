@@ -1,4 +1,4 @@
-# देवनागरी — Nepali alphabet trainer
+# devanagari — Nepali alphabet trainer
 
 Personal web app for learning the Devanagari script as used for Nepali:
 a spaced-repetition drill of vowels, consonants and digits.

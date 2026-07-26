@@ -1,7 +1,7 @@
 import * as sched from './scheduler.js';
 import * as sound from './sound.js';
 
-const APP_VERSION = '0.1.2';
+const APP_VERSION = '0.1.3';
 const PROGRESS_KEY = 'devanagari.progress';
 
 const state = {
@@ -57,7 +57,8 @@ function renderHome() {
             return st && st.box >= sched.LEARNED_BOX;
         }).length;
 
-        const row = el('div', 'group-row' + (locked ? ' locked' : ''));
+        const selected = idx === state.progress.selectedGroup;
+        const row = el('div', 'group-row' + (locked ? ' locked' : '') + (selected ? ' selected' : ''));
         const top = el('div', 'row-top');
         top.append(
             el('span', 'group-name', group.label),
@@ -67,6 +68,14 @@ function renderHome() {
         fill.style.width = `${Math.round(100 * learned / group.chars.length)}%`;
         bar.append(fill);
         row.append(top, el('div', 'group-glyphs', group.chars.map(c => c.glyph).join(' ')), bar);
+        if (!locked) {
+            row.addEventListener('click', () => {
+                sound.click();
+                state.progress.selectedGroup = idx;
+                saveProgress();
+                renderHome();
+            });
+        }
         list.append(row);
     });
 }
@@ -81,7 +90,8 @@ function clearQuizZones() {
 
 function startSession() {
     sound.sessionStart();
-    state.queue = sched.buildSession(state.progress, state.data, Date.now());
+    state.queue = sched.buildSession(state.progress, state.data, Date.now(),
+        {groupIndex: state.progress.selectedGroup});
     state.pos = 0;
     state.asked = 0;
     state.correct = 0;
@@ -106,13 +116,15 @@ function step() {
 }
 
 function showMeet(item) {
+    sound.newChar();
     const c = state.bySlug.get(item.slug);
     const {stage, actions} = clearQuizZones();
-    stage.append(el('p', 'tag', 'new letter'), el('p', 'glyph', c.glyph), el('p', 'roman-big', c.roman));
+    stage.append(el('p', 'tag', 'new character'), el('p', 'glyph', c.glyph), el('p', 'roman-big', c.roman));
     if (c.note)
         stage.append(el('p', 'note', c.note));
     const btn = el('button', 'btn btn-primary', 'Continue');
     btn.addEventListener('click', () => {
+        sound.click();
         sched.meetChar(state.progress, c.slug, Date.now());
         saveProgress();
         showQuestion(item);
@@ -138,6 +150,10 @@ function showQuestion(item) {
 
 function answer(item, chosen, buttons) {
     const correct = chosen === item.slug;
+    if (correct)
+        sound.correct();
+    else
+        sound.wrong();
     for (const btn of buttons.values())
         btn.disabled = true;
     buttons.get(item.slug).classList.add('correct');
@@ -183,7 +199,7 @@ async function shareApp() {
     const url = location.href;
     if (navigator.share) {
         try {
-            await navigator.share({title: 'देवनागरी', url});
+            await navigator.share({title: 'devanagari', url});
         } catch {
             // user dismissed the share sheet
         }
@@ -201,6 +217,7 @@ async function shareApp() {
 }
 
 function resetProgress() {
+    sound.click();
     if (!confirm('Delete all learning progress?'))
         return;
     localStorage.removeItem(PROGRESS_KEY);
@@ -221,11 +238,16 @@ async function init() {
     state.progress = loadProgress();
     // All groups are open by design for now; gating may return with future content.
     state.progress.activeGroup = state.data.groups.length - 1;
+    // Progress saved before course selection existed has no selectedGroup.
+    state.progress.selectedGroup = Math.min(state.progress.selectedGroup ?? 0, state.data.groups.length - 1);
     $('app-version').textContent = `v${APP_VERSION}`;
     $('btn-start').addEventListener('click', startSession);
     $('btn-share').addEventListener('click', shareApp);
     $('btn-reset').addEventListener('click', resetProgress);
-    $('btn-quit').addEventListener('click', renderHome);
+    $('btn-quit').addEventListener('click', () => {
+        sound.click();
+        renderHome();
+    });
     renderHome();
     sound.appStart();
     if ('serviceWorker' in navigator)

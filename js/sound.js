@@ -80,3 +80,24 @@ export function results() {
 export function click() {
     play(() => tone(880, 0, 0.05, 0.08, 'triangle'));
 }
+
+export function newChar() {
+    play(() => {
+        tone(523, 0, 0.12, 0.1);
+        tone(659, 0.09, 0.18, 0.1);
+    });
+}
+
+export function correct() {
+    play(() => {
+        tone(659, 0, 0.08, 0.12);
+        tone(988, 0.06, 0.12, 0.12);
+    });
+}
+
+export function wrong() {
+    play(() => {
+        tone(311, 0, 0.12, 0.12, 'triangle');
+        tone(233, 0.09, 0.2, 0.12, 'triangle');
+    });
+}

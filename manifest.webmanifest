@@ -1,6 +1,6 @@
 {
-    "name": "Devanagari — Nepali alphabet trainer",
-    "short_name": "देवनागरी",
+    "name": "devanagari — Nepali alphabet trainer",
+    "short_name": "devanagari",
     "start_url": "./",
     "scope": "./",
     "display": "standalone",

@@ -41,7 +41,7 @@ test('ConfusablePairsReferenceExistingSlugs', () => {
     }
 });
 
-test('HomophoneLettersCarrySchoolNameTts', () => {
+test('HomophoneCharsCarrySchoolNameTts', () => {
     for (const slug of ['i', 'ii', 'u', 'uu', 'sha', 'ssa', 'sa', 'nna'])
         assert.ok(bySlug.get(slug).tts, `${slug} needs a school-name tts override`);
 });

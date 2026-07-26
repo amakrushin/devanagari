@@ -12,7 +12,7 @@ export const MAX_BOX = INTERVALS_MS.length - 1;
 export const LEARNED_BOX = 2;
 
 export function initProgress() {
-    return {chars: {}, activeGroup: 0, sessions: 0};
+    return {chars: {}, activeGroup: 0, selectedGroup: 0, sessions: 0};
 }
 
 export function meetChar(progress, slug, now) {
@@ -54,8 +54,10 @@ export function tryUnlock(progress, data) {
     return data.groups[progress.activeGroup];
 }
 
-export function buildSession(progress, data, now, {size = 15, maxNew = 3, maxHot = 5} = {}) {
-    const unlocked = unlockedChars(data, progress).map(c => c.slug);
+export function buildSession(progress, data, now, {size = 15, maxNew = 3, maxHot = 5, groupIndex = null} = {}) {
+    const open = data.groups.slice(0, progress.activeGroup + 1);
+    const scoped = groupIndex == null ? open : open.filter((_, idx) => idx === groupIndex);
+    const unlocked = scoped.flatMap(group => group.chars).map(c => c.slug);
     const met = unlocked.filter(slug => progress.chars[slug]);
     const byWeakness = (a, b) => progress.chars[a].box - progress.chars[b].box
         || progress.chars[a].due - progress.chars[b].due;
@@ -76,8 +78,8 @@ export function buildSession(progress, data, now, {size = 15, maxNew = 3, maxHot
     met.filter(slug => progress.chars[slug].due <= now)
         .sort(byWeakness)
         .forEach(slug => push(slug));
-    // New characters round-robin across unlocked groups, in data order within each.
-    const introPools = data.groups.slice(0, progress.activeGroup + 1)
+    // New characters round-robin across the groups in scope, in data order within each.
+    const introPools = scoped
         .map(g => g.chars.filter(c => !progress.chars[c.slug] && !picked.has(c.slug)));
     let introduced = 0;
     while (introduced < maxNew && introPools.some(pool => pool.length)) {
