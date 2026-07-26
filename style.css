@@ -1,0 +1,182 @@
+/* All text sizes are in rem so the app follows the system/browser font size;
+   font: -apple-system-body makes 1rem track iOS Dynamic Type. */
+
+:root {
+    font: -apple-system-body;
+    font-family: system-ui, sans-serif;
+
+    --bg: #14100e;
+    --card: #241c17;
+    --card-edge: #3a2d24;
+    --text: #f2e9df;
+    --muted: #a3937f;
+    --accent: #cc4b37;
+    --accent-press: #a53a29;
+    --ok: #3f9d55;
+    --bad: #c94747;
+    --devanagari: 'Noto Sans Devanagari', 'Kohinoor Devanagari',
+        'Devanagari Sangam MN', 'ITF Devanagari', sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body { margin: 0; }
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100dvh;
+    -webkit-tap-highlight-color: transparent;
+}
+
+#app {
+    max-width: 34rem;
+    margin: 0 auto;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem;
+    padding-top: calc(0.8rem + env(safe-area-inset-top));
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+}
+
+#loading { color: var(--muted); text-align: center; margin-top: 40vh; }
+
+section[hidden] { display: none; }
+
+#screen-home, #screen-quiz {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+/* Home */
+
+.home-header { text-align: center; }
+.brand { font-family: var(--devanagari); font-size: 2.4rem; margin: 0; }
+.tagline { color: var(--muted); margin: 0.2rem 0 0; }
+
+.group-list { flex: 1; display: flex; flex-direction: column; gap: 0.5rem; }
+
+.group-row {
+    background: var(--card);
+    border-radius: 0.8rem;
+    padding: 0.7rem 0.9rem;
+}
+.group-row.locked { opacity: 0.45; }
+.row-top { display: flex; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
+.group-count { color: var(--muted); font-variant-numeric: tabular-nums; }
+.group-glyphs {
+    font-family: var(--devanagari);
+    color: var(--muted);
+    margin-top: 0.25rem;
+    overflow-wrap: anywhere;
+}
+.bar {
+    height: 0.35rem;
+    background: var(--card-edge);
+    border-radius: 0.2rem;
+    margin-top: 0.5rem;
+    overflow: hidden;
+}
+.bar > div { height: 100%; background: var(--accent); border-radius: inherit; }
+
+.home-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+
+/* Buttons */
+
+.btn {
+    font: inherit;
+    color: inherit;
+    background: var(--card);
+    border: 1px solid var(--card-edge);
+    border-radius: 1rem;
+    padding: 0.9rem 1rem;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+.btn:active { transform: scale(0.98); }
+.btn-primary {
+    background: var(--accent);
+    border-color: transparent;
+    font-weight: 600;
+    font-size: 1.15rem;
+}
+.btn-primary:active { background: var(--accent-press); }
+.btn-link {
+    font: inherit;
+    background: none;
+    border: none;
+    color: var(--muted);
+    text-decoration: underline;
+    cursor: pointer;
+}
+.btn-icon {
+    font-size: 1.6rem;
+    line-height: 1;
+    background: none;
+    border: none;
+    color: var(--muted);
+    padding: 0.2rem 0.6rem;
+    cursor: pointer;
+}
+
+/* Quiz */
+
+.quiz-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--muted);
+}
+
+#quiz-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 1.2rem;
+}
+
+.tag {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.8rem;
+    color: var(--muted);
+    text-align: center;
+    margin: 0;
+}
+
+.glyph {
+    font-family: var(--devanagari);
+    font-size: min(9rem, 40vw);
+    line-height: 1.15;
+    text-align: center;
+    margin: 0;
+}
+
+.roman-big { font-size: 2rem; text-align: center; margin: 0; }
+.note { color: var(--muted); text-align: center; margin: 0; }
+
+/* Answer buttons wrap to one column when text is large or the screen narrow. */
+.options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
+    gap: 0.7rem;
+}
+.options .btn { font-size: 1.35rem; min-height: 3.2rem; }
+.options .btn:disabled { cursor: default; }
+.options .btn.correct { background: var(--ok); border-color: transparent; }
+.options .btn.wrong { background: var(--bad); border-color: transparent; }
+
+.summary { text-align: center; display: flex; flex-direction: column; gap: 1rem; }
+.summary .big { font-size: 2.2rem; margin: 0; }
+.unlock-note { color: var(--accent); margin: 0; }

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14100e">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="देवनागरी">
+<title>देवनागरी — Nepali alphabet trainer</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main id="app">
+  <p id="loading">Loading…</p>
+
+  <section id="screen-home" hidden>
+    <header class="home-header">
+      <h1 class="brand">देवनागरी</h1>
+      <p class="tagline">Nepali alphabet trainer</p>
+    </header>
+    <div id="group-list" class="group-list"></div>
+    <button id="btn-start" class="btn btn-primary">Start session</button>
+    <footer class="home-footer">
+      <span id="app-version"></span>
+      <button id="btn-reset" class="btn-link">Reset progress</button>
+    </footer>
+  </section>
+
+  <section id="screen-quiz" hidden>
+    <header class="quiz-header">
+      <button id="btn-quit" class="btn-icon" aria-label="End session">&times;</button>
+      <span id="quiz-remaining"></span>
+    </header>
+    <div id="quiz-body"></div>
+  </section>
+</main>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
