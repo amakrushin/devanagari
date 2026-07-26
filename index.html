@@ -23,13 +23,17 @@
       <h1 class="brand">devanagari</h1>
       <p class="tagline">Nepali alphabet trainer</p>
     </header>
+    <p id="home-stats" class="home-stats" hidden></p>
     <div id="group-list" class="group-list"></div>
     <button id="btn-start" class="btn btn-primary">Start session</button>
     <footer class="home-footer">
       <span id="app-version"></span>
       <button id="btn-share" class="btn-link">Share app</button>
+      <button id="btn-export" class="btn-link">Save progress</button>
+      <button id="btn-import" class="btn-link">Load progress</button>
       <button id="btn-reset" class="btn-link">Reset progress</button>
     </footer>
+    <input type="file" id="import-file" accept=".txt,.json,text/plain,application/json" hidden>
   </section>
 
   <section id="screen-quiz" hidden>

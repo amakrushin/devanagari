@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'devanagari-v0.1.3';
+const CACHE_VERSION = 'devanagari-v0.1.4';
 
 const SHELL = [
     './',
@@ -6,9 +6,12 @@ const SHELL = [
     './style.css',
     './js/app.js',
     './js/scheduler.js',
+    './js/words.js',
+    './js/stats.js',
     './js/audio.js',
     './js/sound.js',
     './characters.json',
+    './words.json',
     './manifest.webmanifest',
     './icons/icon-192.png',
     './icons/icon-512.png',
@@ -33,8 +36,8 @@ self.addEventListener('fetch', event => {
     const url = new URL(request.url);
     if (url.origin !== location.origin)
         return;
-    if (url.pathname.endsWith('/characters.json')) {
-        // Network-first: character data updates should not require a cache version bump.
+    if (url.pathname.endsWith('/characters.json') || url.pathname.endsWith('/words.json')) {
+        // Network-first: data updates should not require a cache version bump.
         event.respondWith(fetch(request)
             .then(response => {
                 const copy = response.clone();

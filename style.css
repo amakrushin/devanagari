@@ -67,6 +67,13 @@ body {
 .brand { font-size: 2.4rem; margin: 0; }
 .tagline { color: var(--muted); margin: 0.2rem 0 0; }
 
+.home-stats {
+    color: var(--muted);
+    text-align: center;
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+}
+
 /* The only scrollable area in the app: the page itself never moves. */
 .group-list {
     flex: 1;
@@ -105,8 +112,10 @@ body {
 
 .home-footer {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
+    gap: 0.2rem 0.6rem;
     color: var(--muted);
     font-size: 0.85rem;
 }
@@ -198,6 +207,12 @@ body {
     line-height: 1.15;
     text-align: center;
     margin: 0;
+}
+
+/* Whole words: smaller than single glyphs, must survive long words on a phone. */
+.glyph-word {
+    font-size: min(4.5rem, 16vw, 14dvh);
+    overflow-wrap: anywhere;
 }
 
 .roman-big { font-size: 2rem; text-align: center; margin: 0; }

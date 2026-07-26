@@ -1,18 +1,22 @@
 import * as sched from './scheduler.js';
 import * as sound from './sound.js';
+import * as words from './words.js';
+import * as stats from './stats.js';
 
-const APP_VERSION = '0.1.3';
+const APP_VERSION = '0.1.4';
 const PROGRESS_KEY = 'devanagari.progress';
 
 const state = {
     data: null,
     bySlug: new Map(),
     progress: null,
+    words: [],
     queue: [],
     pos: 0,
     asked: 0,
     correct: 0,
     unlocked: [],
+    cardShownMs: 0,
 };
 
 const $ = id => document.getElementById(id);
@@ -26,11 +30,32 @@ function el(tag, className, text) {
     return node;
 }
 
+// Accepts any previously saved progress shape (localStorage or imported file)
+// and migrates it to the current schema. Returns null when unusable.
+function normalizeProgress(parsed) {
+    if (!parsed || typeof parsed !== 'object' || typeof parsed.chars !== 'object' || !parsed.chars)
+        return null;
+    const v = typeof parsed.v === 'number' ? parsed.v : 0;
+    if (v > sched.PROGRESS_VERSION)
+        return null;
+    const fresh = sched.initProgress();
+    return {
+        ...fresh,
+        ...parsed,
+        v: sched.PROGRESS_VERSION,
+        // v0 -> v1: word cards and practice stats arrived with v1.
+        words: parsed.words ?? fresh.words,
+        stats: {...fresh.stats, ...(parsed.stats ?? {})},
+        // Progress saved before course selection existed has no selectedGroup.
+        selectedGroup: Math.min(parsed.selectedGroup ?? 0, state.data.groups.length - 1),
+    };
+}
+
 function loadProgress() {
     try {
-        const parsed = JSON.parse(localStorage.getItem(PROGRESS_KEY));
-        if (parsed && parsed.chars)
-            return parsed;
+        const normalized = normalizeProgress(JSON.parse(localStorage.getItem(PROGRESS_KEY)));
+        if (normalized)
+            return normalized;
     } catch {
         // Corrupt storage: start fresh; "Reset progress" stays available on home.
     }
@@ -48,6 +73,13 @@ function show(id) {
 
 function renderHome() {
     show('screen-home');
+    const s = state.progress.stats;
+    const statsLine = $('home-stats');
+    statsLine.hidden = s.daysActive === 0;
+    if (s.daysActive > 0) {
+        const days = `${s.daysActive} ${s.daysActive === 1 ? 'day' : 'days'}`;
+        statsLine.textContent = `${days} · streak ${s.streak} · ${stats.formatTime(s.timeMs)}`;
+    }
     const list = $('group-list');
     list.textContent = '';
     state.data.groups.forEach((group, idx) => {
@@ -90,13 +122,16 @@ function clearQuizZones() {
 
 function startSession() {
     sound.sessionStart();
-    state.queue = sched.buildSession(state.progress, state.data, Date.now(),
-        {groupIndex: state.progress.selectedGroup});
+    state.queue = words.insertWordCards(
+        sched.buildSession(state.progress, state.data, Date.now(),
+            {groupIndex: state.progress.selectedGroup}),
+        words.pickWords(state.words, state.progress));
     state.pos = 0;
     state.asked = 0;
     state.correct = 0;
     state.unlocked = [];
     state.progress.sessions += 1;
+    stats.touchDay(state.progress.stats, Date.now());
     saveProgress();
     show('screen-quiz');
     step();
@@ -108,11 +143,21 @@ function step() {
         showSummary();
         return;
     }
+    state.cardShownMs = Date.now();
     const item = state.queue[state.pos];
-    if (item.isNew && !state.progress.chars[item.slug])
+    if (item.word)
+        showWord(item.word);
+    else if (item.isNew && !state.progress.chars[item.slug])
         showMeet(item);
     else
         showQuestion(item);
+}
+
+// Counts the time a card was on screen into the practice stats.
+function trackCardTime() {
+    const now = Date.now();
+    stats.addTime(state.progress.stats, now - state.cardShownMs);
+    state.cardShownMs = now;
 }
 
 function showMeet(item) {
@@ -125,9 +170,35 @@ function showMeet(item) {
     const btn = el('button', 'btn btn-primary', 'Continue');
     btn.addEventListener('click', () => {
         sound.click();
+        trackCardTime();
         sched.meetChar(state.progress, c.slug, Date.now());
         saveProgress();
         showQuestion(item);
+    });
+    actions.append(btn);
+}
+
+// A word made of learned characters: no question, just the word, then the
+// reading and meaning revealed on the same card.
+function showWord(word) {
+    sound.newChar();
+    const {stage, actions} = clearQuizZones();
+    stage.append(el('p', 'tag', 'word'), el('p', 'glyph glyph-word', word.d));
+    const btn = el('button', 'btn btn-primary', 'Continue');
+    let revealed = false;
+    btn.addEventListener('click', () => {
+        sound.click();
+        trackCardTime();
+        if (!revealed) {
+            revealed = true;
+            state.progress.words[word.d] = Date.now();
+            saveProgress();
+            stage.append(el('p', 'roman-big', word.r), el('p', 'note', word.e));
+            return;
+        }
+        saveProgress();
+        state.pos += 1;
+        step();
     });
     actions.append(btn);
 }
@@ -161,6 +232,7 @@ function answer(item, chosen, buttons) {
         buttons.get(chosen).classList.add('wrong');
 
     sched.applyAnswer(state.progress, item.slug, correct, Date.now());
+    trackCardTime();
     state.asked += 1;
     if (correct) {
         state.correct += 1;
@@ -194,6 +266,13 @@ function showSummary() {
     actions.append(btn);
 }
 
+function flashButton(id, message) {
+    const btn = $(id);
+    const original = btn.textContent;
+    btn.textContent = message;
+    setTimeout(() => { btn.textContent = original; }, 1500);
+}
+
 async function shareApp() {
     sound.click();
     const url = location.href;
@@ -207,13 +286,58 @@ async function shareApp() {
     }
     try {
         await navigator.clipboard.writeText(url);
-        const btn = $('btn-share');
-        const original = btn.textContent;
-        btn.textContent = 'copied!';
-        setTimeout(() => { btn.textContent = original; }, 1500);
+        flashButton('btn-share', 'copied!');
     } catch {
         // clipboard unavailable (insecure context)
     }
+}
+
+async function exportProgress() {
+    sound.click();
+    const text = JSON.stringify(state.progress, null, 2);
+    const name = `devanagari-progress-${stats.localDayString(Date.now())}.txt`;
+    // .txt + text/plain so iPhone Files previews the backup.
+    const file = new File([text], name, {type: 'text/plain'});
+    if (navigator.canShare?.({files: [file]})) {
+        try {
+            await navigator.share({files: [file], title: name});
+        } catch {
+            // user dismissed the share sheet
+        }
+        return;
+    }
+    const url = URL.createObjectURL(file);
+    const link = el('a');
+    link.href = url;
+    link.download = name;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+async function importProgress(file) {
+    let parsed;
+    try {
+        parsed = JSON.parse(await file.text());
+    } catch {
+        flashButton('btn-import', 'invalid file');
+        return;
+    }
+    if ((parsed?.v ?? 0) > sched.PROGRESS_VERSION) {
+        flashButton('btn-import', 'newer app needed');
+        return;
+    }
+    const normalized = normalizeProgress(parsed);
+    if (!normalized) {
+        flashButton('btn-import', 'invalid file');
+        return;
+    }
+    if (!confirm('Replace current progress with the loaded file?'))
+        return;
+    state.progress = normalized;
+    // All groups are open by design for now, matching init().
+    state.progress.activeGroup = state.data.groups.length - 1;
+    saveProgress();
+    renderHome();
 }
 
 function resetProgress() {
@@ -235,14 +359,31 @@ async function init() {
     }
     $('loading').remove();
     state.bySlug = new Map(state.data.groups.flatMap(g => g.chars).map(c => [c.slug, c]));
+    try {
+        const parsed = await (await fetch('words.json')).json();
+        if (Array.isArray(parsed?.words))
+            state.words = parsed.words;
+    } catch {
+        // Words are optional: sessions simply run without word cards.
+    }
     state.progress = loadProgress();
     // All groups are open by design for now; gating may return with future content.
     state.progress.activeGroup = state.data.groups.length - 1;
-    // Progress saved before course selection existed has no selectedGroup.
-    state.progress.selectedGroup = Math.min(state.progress.selectedGroup ?? 0, state.data.groups.length - 1);
     $('app-version').textContent = `v${APP_VERSION}`;
     $('btn-start').addEventListener('click', startSession);
     $('btn-share').addEventListener('click', shareApp);
+    $('btn-export').addEventListener('click', exportProgress);
+    $('btn-import').addEventListener('click', () => {
+        sound.click();
+        $('import-file').click();
+    });
+    $('import-file').addEventListener('change', async event => {
+        const file = event.target.files[0];
+        // Reset so picking the same file again still fires a change event.
+        event.target.value = '';
+        if (file)
+            await importProgress(file);
+    });
     $('btn-reset').addEventListener('click', resetProgress);
     $('btn-quit').addEventListener('click', () => {
         sound.click();

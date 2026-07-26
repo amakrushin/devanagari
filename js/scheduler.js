@@ -11,8 +11,18 @@ export const INTERVALS_MS = [
 export const MAX_BOX = INTERVALS_MS.length - 1;
 export const LEARNED_BOX = 2;
 
+export const PROGRESS_VERSION = 1;
+
 export function initProgress() {
-    return {chars: {}, activeGroup: 0, selectedGroup: 0, sessions: 0};
+    return {
+        v: PROGRESS_VERSION,
+        chars: {},
+        activeGroup: 0,
+        selectedGroup: 0,
+        sessions: 0,
+        words: {},
+        stats: {daysActive: 0, streak: 0, lastDay: null, timeMs: 0},
+    };
 }
 
 export function meetChar(progress, slug, now) {
