@@ -120,6 +120,13 @@ body {
     font-size: 0.85rem;
 }
 
+/* Sits on its own line below the footer links. */
+.home-update {
+    display: block;
+    margin: -0.5rem auto 0;
+    font-size: 0.85rem;
+}
+
 /* Buttons */
 
 .btn {

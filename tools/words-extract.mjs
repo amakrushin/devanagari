@@ -11,7 +11,7 @@ import {readFileSync} from 'node:fs';
 import {decomposeWord, romanizeWord} from '../js/words.js';
 
 const chars = JSON.parse(readFileSync(new URL('../characters.json', import.meta.url), 'utf8'))
-    .groups[0].chars;
+    .groups.flatMap(g => g.chars);
 
 const TEXT_FIELDS = new Set(['text', 'shloka_text']);
 

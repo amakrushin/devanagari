@@ -51,9 +51,17 @@ test('MapsAnusvaraAndVisarga', () => {
     assert.deepEqual(words.decomposeWord('दुःख'), ['da', 'u', 'ah', 'kha']);
 });
 
+test('ReadsCommonNepaliConjunctWords', () => {
+    assert.deepEqual(words.decomposeWord('राम्रो'), ['ra', 'aa', 'mra', 'o']);
+    assert.deepEqual(words.decomposeWord('मान्छे'), ['ma', 'aa', 'nchha', 'e']);
+    assert.deepEqual(words.decomposeWord('कर्म'), ['ka', 'rma']);
+    assert.deepEqual(words.decomposeWord('गर्नु'), ['ga', 'rna', 'u']);
+    assert.deepEqual(words.decomposeWord('नमस्ते'), ['na', 'ma', 'sta', 'e']);
+});
+
 test('RejectsUntaughtConjuncts', () => {
-    assert.equal(words.decomposeWord('मान्छे'), null);
-    assert.equal(words.decomposeWord('राम्रो'), null);
+    assert.equal(words.decomposeWord('उद्भव'), null, 'द्भ is not taught');
+    assert.equal(words.decomposeWord('स्त्री'), null, 'triple clusters are not taught');
 });
 
 test('RejectsFinalHalanta', () => {
@@ -77,15 +85,37 @@ test('RejectsDigitsLatinSpacesEmpty', () => {
 });
 
 test('EveryTaughtCharacterGlyphDecomposesToItsSlug', () => {
-    for (const c of data.groups[0].chars) {
+    const groups = data.groups.filter(g => g.id === 'characters' || g.id === 'conjuncts');
+    for (const c of groups.flatMap(g => g.chars)) {
         const slugs = words.decomposeWord(c.glyph);
         assert.ok(slugs, `glyph ${c.glyph} must decompose`);
         assert.ok(slugs.includes(c.slug), `glyph ${c.glyph} must require ${c.slug}`);
     }
 });
 
+test('EveryComboGlyphDecomposesToBaseSlugsOnly', () => {
+    const combos = data.groups.find(g => g.id === 'combos');
+    assert.ok(combos, 'combos group must exist');
+    for (const c of combos.chars) {
+        const slugs = words.decomposeWord(c.glyph);
+        assert.ok(slugs, `combo ${c.glyph} must decompose`);
+        assert.equal(slugs.length, 2, `combo ${c.glyph} is consonant + sign`);
+        // Combos never gate word eligibility; the vowel does.
+        assert.ok(!slugs.includes(c.slug), `combo ${c.glyph} must not require itself`);
+    }
+});
+
+test('ConjunctMapMatchesConjunctsGroup', () => {
+    const conjuncts = data.groups.find(g => g.id === 'conjuncts');
+    assert.ok(conjuncts, 'conjuncts group must exist');
+    const taught = new Set(['क्ष', 'त्र', 'ज्ञ', ...conjuncts.chars.map(c => c.glyph)]);
+    assert.deepEqual(new Set(words.CONJUNCT_SLUGS.keys()), taught);
+    for (const c of conjuncts.chars)
+        assert.equal(words.CONJUNCT_SLUGS.get(c.glyph), c.slug, `slug mismatch for ${c.glyph}`);
+});
+
 test('RomanizesWordsTheWayCharactersAreTaught', () => {
-    const chars = data.groups[0].chars;
+    const chars = data.groups.flatMap(g => g.chars);
     assert.equal(words.romanizeWord('पानी', chars), 'pānī');
     assert.equal(words.romanizeWord('घर', chars), 'ghara');
     assert.equal(words.romanizeWord('आमा', chars), 'āmā');
@@ -95,10 +125,14 @@ test('RomanizesWordsTheWayCharactersAreTaught', () => {
     assert.equal(words.romanizeWord('दुःख', chars), 'duḥkha');
     assert.equal(words.romanizeWord('ऋषि', chars), 'riṣi');
     assert.equal(words.romanizeWord('गृह', chars), 'griha');
+    assert.equal(words.romanizeWord('कर्म', chars), 'karma');
+    assert.equal(words.romanizeWord('राम्रो', chars), 'rāmro');
+    assert.equal(words.romanizeWord('खुट्टा', chars), 'khuṭṭā');
+    assert.equal(words.romanizeWord('विद्यालय', chars), 'widyālaya');
 });
 
 test('RomanizeRejectsWhatDecomposeRejects', () => {
-    assert.equal(words.romanizeWord('राम्रो', data.groups[0].chars), null);
+    assert.equal(words.romanizeWord('उद्भव', data.groups[0].chars), null);
     assert.equal(words.romanizeWord('', data.groups[0].chars), null);
 });
 

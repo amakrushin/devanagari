@@ -3,12 +3,13 @@ import * as sound from './sound.js';
 import * as words from './words.js';
 import * as stats from './stats.js';
 
-const APP_VERSION = '0.1.4';
+const APP_VERSION = '0.1.5';
 const PROGRESS_KEY = 'devanagari.progress';
 
 const state = {
     data: null,
     bySlug: new Map(),
+    groupBySlug: new Map(),
     progress: null,
     words: [],
     queue: [],
@@ -30,30 +31,15 @@ function el(tag, className, text) {
     return node;
 }
 
-// Accepts any previously saved progress shape (localStorage or imported file)
-// and migrates it to the current schema. Returns null when unusable.
-function normalizeProgress(parsed) {
-    if (!parsed || typeof parsed !== 'object' || typeof parsed.chars !== 'object' || !parsed.chars)
-        return null;
-    const v = typeof parsed.v === 'number' ? parsed.v : 0;
-    if (v > sched.PROGRESS_VERSION)
-        return null;
-    const fresh = sched.initProgress();
-    return {
-        ...fresh,
-        ...parsed,
-        v: sched.PROGRESS_VERSION,
-        // v0 -> v1: word cards and practice stats arrived with v1.
-        words: parsed.words ?? fresh.words,
-        stats: {...fresh.stats, ...(parsed.stats ?? {})},
-        // Progress saved before course selection existed has no selectedGroup.
-        selectedGroup: Math.min(parsed.selectedGroup ?? 0, state.data.groups.length - 1),
-    };
+// Multi-character glyphs (words, long conjunct words) need the smaller size.
+function glyphClass(glyph) {
+    return [...glyph].length > 3 ? 'glyph glyph-word' : 'glyph';
 }
 
 function loadProgress() {
     try {
-        const normalized = normalizeProgress(JSON.parse(localStorage.getItem(PROGRESS_KEY)));
+        const normalized = sched.normalizeProgress(JSON.parse(localStorage.getItem(PROGRESS_KEY)),
+            state.data);
         if (normalized)
             return normalized;
     } catch {
@@ -89,7 +75,7 @@ function renderHome() {
             return st && st.box >= sched.LEARNED_BOX;
         }).length;
 
-        const selected = idx === state.progress.selectedGroup;
+        const selected = group.id === state.progress.selectedGroup;
         const row = el('div', 'group-row' + (locked ? ' locked' : '') + (selected ? ' selected' : ''));
         const top = el('div', 'row-top');
         top.append(
@@ -99,11 +85,14 @@ function renderHome() {
         const fill = el('div');
         fill.style.width = `${Math.round(100 * learned / group.chars.length)}%`;
         bar.append(fill);
-        row.append(top, el('div', 'group-glyphs', group.chars.map(c => c.glyph).join(' ')), bar);
+        // Large groups would flood the row; show a taste of the content.
+        const preview = group.chars.slice(0, 40).map(c => c.glyph).join(' ')
+            + (group.chars.length > 40 ? ' …' : '');
+        row.append(top, el('div', 'group-glyphs', preview), bar);
         if (!locked) {
             row.addEventListener('click', () => {
                 sound.click();
-                state.progress.selectedGroup = idx;
+                state.progress.selectedGroup = group.id;
                 saveProgress();
                 renderHome();
             });
@@ -122,9 +111,11 @@ function clearQuizZones() {
 
 function startSession() {
     sound.sessionStart();
+    // Selection is stored as a group id; the scheduler scopes by index.
+    const groupIndex = Math.max(0,
+        state.data.groups.findIndex(g => g.id === state.progress.selectedGroup));
     state.queue = words.insertWordCards(
-        sched.buildSession(state.progress, state.data, Date.now(),
-            {groupIndex: state.progress.selectedGroup}),
+        sched.buildSession(state.progress, state.data, Date.now(), {groupIndex}),
         words.pickWords(state.words, state.progress));
     state.pos = 0;
     state.asked = 0;
@@ -150,6 +141,14 @@ function step() {
     else if (item.isNew && !state.progress.chars[item.slug])
         showMeet(item);
     else
+        showQuiz(item);
+}
+
+// Recall groups grade themselves; everything else gets the 4-option quiz.
+function showQuiz(item) {
+    if (state.groupBySlug.get(item.slug)?.quiz === 'recall')
+        showRecall(item);
+    else
         showQuestion(item);
 }
 
@@ -164,7 +163,9 @@ function showMeet(item) {
     sound.newChar();
     const c = state.bySlug.get(item.slug);
     const {stage, actions} = clearQuizZones();
-    stage.append(el('p', 'tag', 'new character'), el('p', 'glyph', c.glyph), el('p', 'roman-big', c.roman));
+    const tag = state.groupBySlug.get(item.slug)?.quiz === 'recall' ? 'new word' : 'new character';
+    stage.append(el('p', 'tag', tag), el('p', glyphClass(c.glyph), c.glyph),
+        el('p', 'roman-big', c.roman));
     if (c.note)
         stage.append(el('p', 'note', c.note));
     const btn = el('button', 'btn btn-primary', 'Continue');
@@ -173,7 +174,38 @@ function showMeet(item) {
         trackCardTime();
         sched.meetChar(state.progress, c.slug, Date.now());
         saveProgress();
-        showQuestion(item);
+        showQuiz(item);
+    });
+    actions.append(btn);
+}
+
+// A daily word: try reading it yourself, reveal the answer, then grade honestly.
+function showRecall(item) {
+    sound.newChar();
+    const c = state.bySlug.get(item.slug);
+    const {stage, actions} = clearQuizZones();
+    stage.append(el('p', 'tag', 'word'), el('p', glyphClass(c.glyph), c.glyph));
+    const btn = el('button', 'btn btn-primary', 'Continue');
+    btn.addEventListener('click', () => {
+        sound.click();
+        stage.append(el('p', 'roman-big', c.roman), el('p', 'note', c.note));
+        const grade = (label, correct) => {
+            const choice = el('button', 'btn', label);
+            choice.addEventListener('click', () => {
+                if (correct)
+                    sound.correct();
+                else
+                    sound.wrong();
+                recordAnswer(item, correct);
+                state.pos += 1;
+                step();
+            });
+            return choice;
+        };
+        const grid = el('div', 'options');
+        grid.append(grade('I didn\'t', false), grade('I knew it', true));
+        actions.textContent = '';
+        actions.append(grid);
     });
     actions.append(btn);
 }
@@ -207,7 +239,7 @@ function showQuestion(item) {
     const c = state.bySlug.get(item.slug);
     const options = sched.shuffle([c.slug, ...sched.pickDistractors(state.data, state.progress, c.slug)]);
     const {stage, actions} = clearQuizZones();
-    stage.append(el('p', 'glyph', c.glyph));
+    stage.append(el('p', glyphClass(c.glyph), c.glyph));
     const grid = el('div', 'options');
     const buttons = new Map();
     for (const slug of options) {
@@ -217,6 +249,23 @@ function showQuestion(item) {
         grid.append(btn);
     }
     actions.append(grid);
+}
+
+// Shared outcome path for option quizzes and self-graded recall cards.
+function recordAnswer(item, correct) {
+    sched.applyAnswer(state.progress, item.slug, correct, Date.now());
+    trackCardTime();
+    state.asked += 1;
+    if (correct) {
+        state.correct += 1;
+    } else if (!state.queue.slice(state.pos + 1).some(q => q.slug === item.slug)) {
+        // Drill the missed character once more before the session ends.
+        state.queue.push({slug: item.slug, isNew: false});
+    }
+    const opened = sched.tryUnlock(state.progress, state.data);
+    if (opened)
+        state.unlocked.push(opened.label);
+    saveProgress();
 }
 
 function answer(item, chosen, buttons) {
@@ -231,19 +280,7 @@ function answer(item, chosen, buttons) {
     if (!correct)
         buttons.get(chosen).classList.add('wrong');
 
-    sched.applyAnswer(state.progress, item.slug, correct, Date.now());
-    trackCardTime();
-    state.asked += 1;
-    if (correct) {
-        state.correct += 1;
-    } else if (!state.queue.slice(state.pos + 1).some(q => q.slug === item.slug)) {
-        // Drill the missed character once more before the session ends.
-        state.queue.push({slug: item.slug, isNew: false});
-    }
-    const opened = sched.tryUnlock(state.progress, state.data);
-    if (opened)
-        state.unlocked.push(opened.label);
-    saveProgress();
+    recordAnswer(item, correct);
     setTimeout(() => {
         state.pos += 1;
         step();
@@ -326,7 +363,7 @@ async function importProgress(file) {
         flashButton('btn-import', 'newer app needed');
         return;
     }
-    const normalized = normalizeProgress(parsed);
+    const normalized = sched.normalizeProgress(parsed, state.data);
     if (!normalized) {
         flashButton('btn-import', 'invalid file');
         return;
@@ -349,6 +386,28 @@ function resetProgress() {
     renderHome();
 }
 
+// Asks the service worker for a new app version; reloads once it takes over.
+async function checkUpdates() {
+    sound.click();
+    try {
+        const registration = await navigator.serviceWorker?.getRegistration();
+        if (!registration) {
+            flashButton('btn-update', 'unavailable');
+            return;
+        }
+        await registration.update();
+        if (registration.installing || registration.waiting) {
+            navigator.serviceWorker.addEventListener('controllerchange',
+                () => location.reload(), {once: true});
+            flashButton('btn-update', 'updating…');
+        } else {
+            flashButton('btn-update', 'up to date');
+        }
+    } catch {
+        flashButton('btn-update', 'check failed');
+    }
+}
+
 async function init() {
     try {
         const response = await fetch('characters.json');
@@ -359,6 +418,7 @@ async function init() {
     }
     $('loading').remove();
     state.bySlug = new Map(state.data.groups.flatMap(g => g.chars).map(c => [c.slug, c]));
+    state.groupBySlug = new Map(state.data.groups.flatMap(g => g.chars.map(c => [c.slug, g])));
     try {
         const parsed = await (await fetch('words.json')).json();
         if (Array.isArray(parsed?.words))
@@ -385,6 +445,7 @@ async function init() {
             await importProgress(file);
     });
     $('btn-reset').addEventListener('click', resetProgress);
+    $('btn-update').addEventListener('click', checkUpdates);
     $('btn-quit').addEventListener('click', () => {
         sound.click();
         renderHome();

@@ -21,12 +21,35 @@ export const CODEPOINT_SLUGS = new Map([
     ['ं', 'am'], ['ः', 'ah'],
 ]);
 
-// The only conjuncts taught as characters of their own, matched before single
+// Conjuncts taught as characters of their own, matched before single
 // codepoints. Any other virama sequence makes a word unreadable for now.
+// The first three live in the characters group; the rest form the compounds
+// group (insertion order = teaching order). Where the plain slug would
+// collide with an existing character slug or degenerate (ट्ट), a `q` marks
+// the virama position (q never occurs in any other slug class).
 export const CONJUNCT_SLUGS = new Map([
     ['क्ष', 'kshya'],
     ['त्र', 'tra'],
     ['ज्ञ', 'gya'],
+    // ra attached below
+    ['प्र', 'pra'], ['क्र', 'kra'], ['ग्र', 'gra'], ['द्र', 'dra'],
+    ['ब्र', 'bra'], ['म्र', 'mra'], ['श्र', 'shra'],
+    // repha: ra before a consonant
+    ['र्म', 'rma'], ['र्य', 'rya'], ['र्व', 'rwa'], ['र्त', 'rta'],
+    ['र्थ', 'rtha'], ['र्द', 'rda'], ['र्न', 'rna'], ['र्ष', 'rssa'],
+    // sa clusters
+    ['स्त', 'sta'], ['स्थ', 'stha'], ['स्व', 'swa'], ['स्य', 'sya'],
+    ['स्क', 'ska'], ['स्न', 'sna'], ['स्प', 'spa'],
+    // na clusters
+    ['न्त', 'nta'], ['न्द', 'nda'], ['न्ध', 'ndha'], ['न्न', 'nqna'],
+    ['न्म', 'nma'], ['न्य', 'nqya'], ['न्छ', 'nchha'],
+    // ta clusters
+    ['त्त', 'tqta'], ['त्य', 'tya'], ['त्म', 'tma'], ['त्न', 'tna'],
+    // da and dha clusters
+    ['द्ध', 'dqdha'], ['द्य', 'dya'], ['ध्य', 'dhya'],
+    // frequent leftovers
+    ['क्त', 'kta'], ['प्त', 'pta'], ['च्छ', 'chchha'], ['च्च', 'chcha'],
+    ['व्य', 'wya'], ['ङ्ग', 'ngga'], ['ण्ड', 'nndda'], ['ट्ट', 'tqtta'],
 ]);
 
 // Longest conjunct sequence in codepoints (consonant + virama + consonant).

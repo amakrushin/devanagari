@@ -52,9 +52,10 @@ test('BuildSessionIntroducesAtMostThreeNewCharacters', () => {
 
 test('BuildSessionInterleavesIntroductionsAcrossGroups', () => {
     const progress = sched.initProgress();
-    progress.activeGroup = 1;
+    progress.activeGroup = data.groups.length - 1;
     const queue = sched.buildSession(progress, data, NOW);
-    assert.deepEqual(queue.map(item => item.slug), ['a', 'd0', 'aa']);
+    // Round-robin takes the first new character of each open group in order.
+    assert.deepEqual(queue.map(item => item.slug), ['a', 'kaa', 'pra']);
     assert.ok(queue.every(item => item.isNew));
 });
 
@@ -93,18 +94,20 @@ test('BuildSessionCapsAtFifteenQuestions', () => {
 });
 
 test('BuildSessionWithGroupIndexUsesOnlyThatGroup', () => {
-    const progress = metProgress(1, 0);
-    const digits = new Set(data.groups[1].chars.map(c => c.slug));
-    const queue = sched.buildSession(progress, data, NOW, {groupIndex: 1});
+    const digitsIndex = data.groups.findIndex(g => g.id === 'digits');
+    const progress = metProgress(digitsIndex, 0);
+    const digits = new Set(data.groups[digitsIndex].chars.map(c => c.slug));
+    const queue = sched.buildSession(progress, data, NOW, {groupIndex: digitsIndex});
     assert.equal(queue.length, digits.size);
     for (const item of queue)
         assert.ok(digits.has(item.slug), `slug ${item.slug} is outside the selected group`);
 });
 
 test('BuildSessionWithGroupIndexIntroducesOnlyItsCharacters', () => {
+    const digitsIndex = data.groups.findIndex(g => g.id === 'digits');
     const progress = sched.initProgress();
-    progress.activeGroup = 1;
-    const queue = sched.buildSession(progress, data, NOW, {groupIndex: 1});
+    progress.activeGroup = digitsIndex;
+    const queue = sched.buildSession(progress, data, NOW, {groupIndex: digitsIndex});
     assert.deepEqual(queue.map(item => item.slug), ['d0', 'd1', 'd2']);
     assert.ok(queue.every(item => item.isNew));
 });
@@ -112,7 +115,7 @@ test('BuildSessionWithGroupIndexIntroducesOnlyItsCharacters', () => {
 test('TryUnlockAdvancesWhenActiveGroupLearned', () => {
     const progress = metProgress(0, sched.LEARNED_BOX);
     const opened = sched.tryUnlock(progress, data);
-    assert.equal(opened.id, 'digits');
+    assert.equal(opened.id, 'combos');
     assert.equal(progress.activeGroup, 1);
 });
 
@@ -148,4 +151,65 @@ test('PickDistractorsStaysWithinUnlockedGroups', () => {
     const unlocked = new Set(sched.unlockedChars(data, progress).map(c => c.slug));
     for (const slug of sched.pickDistractors(data, progress, 'a'))
         assert.ok(unlocked.has(slug));
+});
+
+test('InitProgressSelectsCharactersById', () => {
+    const progress = sched.initProgress();
+    assert.equal(progress.selectedGroup, 'characters');
+    assert.equal(progress.v, sched.PROGRESS_VERSION);
+});
+
+test('NormalizeMapsNumericSelectionByHistoricalOrder', () => {
+    assert.equal(sched.normalizeProgress({v: 1, chars: {}, selectedGroup: 0}, data).selectedGroup,
+        'characters');
+    assert.equal(sched.normalizeProgress({v: 1, chars: {}, selectedGroup: 1}, data).selectedGroup,
+        'digits');
+});
+
+test('NormalizeDefaultsMissingOrInvalidSelectionToFirstGroup', () => {
+    const first = data.groups[0].id;
+    assert.equal(sched.normalizeProgress({chars: {}}, data).selectedGroup, first);
+    assert.equal(sched.normalizeProgress({v: 1, chars: {}, selectedGroup: 7}, data).selectedGroup, first);
+    assert.equal(sched.normalizeProgress({v: 2, chars: {}, selectedGroup: 'bogus'}, data).selectedGroup,
+        first);
+});
+
+test('NormalizeKeepsValidGroupIds', () => {
+    assert.equal(sched.normalizeProgress({v: 2, chars: {}, selectedGroup: 'digits'}, data).selectedGroup,
+        'digits');
+});
+
+test('NormalizeRejectsNewerVersionsAndGarbage', () => {
+    assert.equal(sched.normalizeProgress({v: sched.PROGRESS_VERSION + 1, chars: {}}, data), null);
+    assert.equal(sched.normalizeProgress(null, data), null);
+    assert.equal(sched.normalizeProgress({box: 3}, data), null);
+    assert.equal(sched.normalizeProgress('text', data), null);
+});
+
+test('NormalizePreservesCharBoxesAndShownWords', () => {
+    const blob = {
+        v: 1,
+        chars: {ka: {box: 4, due: 5, hotLeft: 1}},
+        selectedGroup: 1,
+        words: {'जल': 42},
+        sessions: 9,
+    };
+    const normalized = sched.normalizeProgress(blob, data);
+    assert.deepEqual(normalized.chars, {ka: {box: 4, due: 5, hotLeft: 1}});
+    assert.deepEqual(normalized.words, {'जल': 42});
+    assert.equal(normalized.sessions, 9);
+    assert.equal(normalized.v, sched.PROGRESS_VERSION);
+});
+
+test('NormalizeMergesStatsDefaultsIntoLegacyBlobs', () => {
+    const legacy = sched.normalizeProgress({chars: {}}, data);
+    assert.deepEqual(legacy.stats, {daysActive: 0, streak: 0, lastDay: null, timeMs: 0});
+    const partial = sched.normalizeProgress(
+        {v: 1, chars: {}, stats: {daysActive: 3, streak: 2, lastDay: 'x', timeMs: 5}}, data);
+    assert.equal(partial.stats.daysActive, 3);
+});
+
+test('NormalizeClampsActiveGroupToExistingGroups', () => {
+    assert.equal(sched.normalizeProgress({v: 1, chars: {}, activeGroup: 99}, data).activeGroup,
+        data.groups.length - 1);
 });

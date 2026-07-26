@@ -5,7 +5,7 @@ import {decomposeWord, romanizeWord} from '../js/words.js';
 
 const data = JSON.parse(await readFile(new URL('../words.json', import.meta.url), 'utf8'));
 const chars = JSON.parse(await readFile(new URL('../characters.json', import.meta.url), 'utf8'))
-    .groups[0].chars;
+    .groups.flatMap(g => g.chars);
 
 // Standalone "I" is the one legitimate capital in a gloss.
 const withoutI = text => text.replace(/\bI\b/g, '');

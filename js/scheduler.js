@@ -11,18 +11,51 @@ export const INTERVALS_MS = [
 export const MAX_BOX = INTERVALS_MS.length - 1;
 export const LEARNED_BOX = 2;
 
-export const PROGRESS_VERSION = 1;
+export const PROGRESS_VERSION = 2;
+
+// v0/v1 stored the selected course as a group index; this was the only group
+// order ever shipped with numeric selection.
+const V1_GROUP_ORDER = ['characters', 'digits'];
 
 export function initProgress() {
     return {
         v: PROGRESS_VERSION,
         chars: {},
         activeGroup: 0,
-        selectedGroup: 0,
+        selectedGroup: 'characters',
         sessions: 0,
         words: {},
         stats: {daysActive: 0, streak: 0, lastDay: null, timeMs: 0},
     };
+}
+
+// Accepts any previously saved progress shape (localStorage or imported file)
+// and migrates it to the current schema. Returns null when unusable.
+export function normalizeProgress(parsed, data) {
+    if (!parsed || typeof parsed !== 'object' || typeof parsed.chars !== 'object' || !parsed.chars)
+        return null;
+    const v = typeof parsed.v === 'number' ? parsed.v : 0;
+    if (v > PROGRESS_VERSION)
+        return null;
+    const fresh = initProgress();
+    return {
+        ...fresh,
+        ...parsed,
+        v: PROGRESS_VERSION,
+        // v0 -> v1: word cards and practice stats arrived with v1.
+        words: parsed.words ?? fresh.words,
+        stats: {...fresh.stats, ...(parsed.stats ?? {})},
+        // v1 -> v2: selection is stored by group id so group reorders never
+        // re-point old progress at a different course.
+        selectedGroup: migrateSelectedGroup(parsed.selectedGroup, data),
+        activeGroup: Math.min(typeof parsed.activeGroup === 'number' ? parsed.activeGroup : 0,
+            data.groups.length - 1),
+    };
+}
+
+function migrateSelectedGroup(selected, data) {
+    const id = typeof selected === 'number' ? V1_GROUP_ORDER[selected] : selected;
+    return data.groups.some(g => g.id === id) ? id : data.groups[0].id;
 }
 
 export function meetChar(progress, slug, now) {

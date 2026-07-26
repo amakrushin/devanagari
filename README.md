@@ -1,7 +1,8 @@
 # devanagari — Nepali alphabet trainer
 
 Personal web app for learning the Devanagari script as used for Nepali:
-a spaced-repetition drill of vowels, consonants and digits.
+a spaced-repetition drill of characters, consonant-vowel combinations,
+compound characters, daily words and digits.
 
 - Static, no build step.
 - Install on iPhone: open the GitHub Pages URL in Safari, Share, Add to Home Screen.
