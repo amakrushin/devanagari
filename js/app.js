@@ -1,7 +1,7 @@
 import * as sched from './scheduler.js';
 import * as sound from './sound.js';
 
-const APP_VERSION = '0.1.1';
+const APP_VERSION = '0.1.2';
 const PROGRESS_KEY = 'devanagari.progress';
 
 const state = {
@@ -178,6 +178,28 @@ function showSummary() {
     actions.append(btn);
 }
 
+async function shareApp() {
+    sound.click();
+    const url = location.href;
+    if (navigator.share) {
+        try {
+            await navigator.share({title: 'देवनागरी', url});
+        } catch {
+            // user dismissed the share sheet
+        }
+        return;
+    }
+    try {
+        await navigator.clipboard.writeText(url);
+        const btn = $('btn-share');
+        const original = btn.textContent;
+        btn.textContent = 'copied!';
+        setTimeout(() => { btn.textContent = original; }, 1500);
+    } catch {
+        // clipboard unavailable (insecure context)
+    }
+}
+
 function resetProgress() {
     if (!confirm('Delete all learning progress?'))
         return;
@@ -197,8 +219,11 @@ async function init() {
     $('loading').remove();
     state.bySlug = new Map(state.data.groups.flatMap(g => g.chars).map(c => [c.slug, c]));
     state.progress = loadProgress();
+    // All groups are open by design for now; gating may return with future content.
+    state.progress.activeGroup = state.data.groups.length - 1;
     $('app-version').textContent = `v${APP_VERSION}`;
     $('btn-start').addEventListener('click', startSession);
+    $('btn-share').addEventListener('click', shareApp);
     $('btn-reset').addEventListener('click', resetProgress);
     $('btn-quit').addEventListener('click', renderHome);
     renderHome();

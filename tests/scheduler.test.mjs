@@ -50,6 +50,14 @@ test('BuildSessionIntroducesAtMostThreeNewCharacters', () => {
     assert.ok(queue.every(item => item.isNew));
 });
 
+test('BuildSessionInterleavesIntroductionsAcrossGroups', () => {
+    const progress = sched.initProgress();
+    progress.activeGroup = 1;
+    const queue = sched.buildSession(progress, data, NOW);
+    assert.deepEqual(queue.map(item => item.slug), ['a', 'd0', 'aa']);
+    assert.ok(queue.every(item => item.isNew));
+});
+
 test('BuildSessionPutsHotCharactersFirst', () => {
     const progress = metProgress(0, 2);
     sched.markHot(progress, 'uu', NOW);
@@ -80,14 +88,14 @@ test('BuildSessionPrefersWeakestDueCharacters', () => {
 });
 
 test('BuildSessionCapsAtFifteenQuestions', () => {
-    const progress = metProgress(5, 0);
+    const progress = metProgress(1, 0);
     assert.equal(sched.buildSession(progress, data, NOW).length, 15);
 });
 
 test('TryUnlockAdvancesWhenActiveGroupLearned', () => {
     const progress = metProgress(0, sched.LEARNED_BOX);
     const opened = sched.tryUnlock(progress, data);
-    assert.equal(opened.id, 'swar-2');
+    assert.equal(opened.id, 'digits');
     assert.equal(progress.activeGroup, 1);
 });
 
@@ -112,7 +120,7 @@ test('PickDistractorsReturnsThreeUniqueOtherCharacters', () => {
 });
 
 test('PickDistractorsPrefersConfusablePartners', () => {
-    const progress = metProgress(5, 2);
+    const progress = metProgress(0, 2);
     const picked = sched.pickDistractors(data, progress, 'gha');
     assert.ok(picked.includes('ga'), 'aspirate partner ga expected');
     assert.ok(picked.includes('dha'), 'lookalike dha expected');

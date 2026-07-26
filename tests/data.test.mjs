@@ -10,11 +10,8 @@ test('HasFiftyNineCharacters', () => {
     assert.equal(chars.length, 59);
 });
 
-test('HasTwelveGroupsInUnlockOrder', () => {
-    assert.deepEqual(data.groups.map(g => g.id), [
-        'swar-1', 'swar-2', 'ka-varga', 'cha-varga', 'Ta-varga', 'ta-varga',
-        'pa-varga', 'antastha', 'ushma', 'sanyukta', 'digits-1', 'digits-2',
-    ]);
+test('HasTwoGroupsCharactersAndDigits', () => {
+    assert.deepEqual(data.groups.map(g => g.id), ['characters', 'digits']);
 });
 
 test('SlugsAreUniqueLowercaseAscii', () => {

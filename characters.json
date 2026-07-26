@@ -1,130 +1,70 @@
 {
-    "version": 1,
+    "version": 2,
     "groups": [
         {
-            "id": "swar-1",
-            "label": "Vowels I",
+            "id": "characters",
+            "label": "Characters",
             "chars": [
                 {"glyph": "अ", "roman": "a", "slug": "a"},
                 {"glyph": "आ", "roman": "ā", "slug": "aa"},
                 {"glyph": "इ", "roman": "i", "slug": "i", "note": "hraswa — short i", "tts": "ह्रस्व इ"},
                 {"glyph": "ई", "roman": "ī", "slug": "ii", "note": "dirgha — long i", "tts": "दीर्घ ई"},
                 {"glyph": "उ", "roman": "u", "slug": "u", "note": "hraswa — short u", "tts": "ह्रस्व उ"},
-                {"glyph": "ऊ", "roman": "ū", "slug": "uu", "note": "dirgha — long u", "tts": "दीर्घ ऊ"}
-            ]
-        },
-        {
-            "id": "swar-2",
-            "label": "Vowels II",
-            "chars": [
+                {"glyph": "ऊ", "roman": "ū", "slug": "uu", "note": "dirgha — long u", "tts": "दीर्घ ऊ"},
                 {"glyph": "ऋ", "roman": "ri", "slug": "ri", "note": "appears in Sanskrit loanwords"},
                 {"glyph": "ए", "roman": "e", "slug": "e"},
                 {"glyph": "ऐ", "roman": "ai", "slug": "ai"},
                 {"glyph": "ओ", "roman": "o", "slug": "o"},
                 {"glyph": "औ", "roman": "au", "slug": "au"},
                 {"glyph": "अं", "roman": "aṁ", "slug": "am", "note": "anuswar — nasal ending"},
-                {"glyph": "अः", "roman": "aḥ", "slug": "ah", "note": "visarga — breathy ending"}
-            ]
-        },
-        {
-            "id": "ka-varga",
-            "label": "Ka varga",
-            "chars": [
+                {"glyph": "अः", "roman": "aḥ", "slug": "ah", "note": "visarga — breathy ending"},
                 {"glyph": "क", "roman": "ka", "slug": "ka"},
                 {"glyph": "ख", "roman": "kha", "slug": "kha"},
                 {"glyph": "ग", "roman": "ga", "slug": "ga"},
                 {"glyph": "घ", "roman": "gha", "slug": "gha"},
-                {"glyph": "ङ", "roman": "ṅa", "slug": "nga", "note": "the ng sound, rare on its own"}
-            ]
-        },
-        {
-            "id": "cha-varga",
-            "label": "Cha varga",
-            "chars": [
+                {"glyph": "ङ", "roman": "ṅa", "slug": "nga", "note": "the ng sound, rare on its own"},
                 {"glyph": "च", "roman": "cha", "slug": "cha"},
                 {"glyph": "छ", "roman": "chha", "slug": "chha"},
                 {"glyph": "ज", "roman": "ja", "slug": "ja"},
                 {"glyph": "झ", "roman": "jha", "slug": "jha"},
-                {"glyph": "ञ", "roman": "ña", "slug": "nya", "note": "the ny sound"}
-            ]
-        },
-        {
-            "id": "Ta-varga",
-            "label": "Ṭa varga (retroflex)",
-            "chars": [
+                {"glyph": "ञ", "roman": "ña", "slug": "nya", "note": "the ny sound"},
                 {"glyph": "ट", "roman": "ṭa", "slug": "tta", "note": "retroflex — tongue curled back"},
                 {"glyph": "ठ", "roman": "ṭha", "slug": "ttha", "note": "retroflex"},
                 {"glyph": "ड", "roman": "ḍa", "slug": "dda", "note": "retroflex"},
                 {"glyph": "ढ", "roman": "ḍha", "slug": "ddha", "note": "retroflex"},
-                {"glyph": "ण", "roman": "ṇa", "slug": "nna", "note": "murdhanya ṇa — sounds like na", "tts": "मूर्धन्य ण"}
-            ]
-        },
-        {
-            "id": "ta-varga",
-            "label": "Ta varga (dental)",
-            "chars": [
+                {"glyph": "ण", "roman": "ṇa", "slug": "nna", "note": "murdhanya ṇa — sounds like na", "tts": "मूर्धन्य ण"},
                 {"glyph": "त", "roman": "ta", "slug": "ta", "note": "dental — tongue at the teeth"},
                 {"glyph": "थ", "roman": "tha", "slug": "tha", "note": "dental"},
                 {"glyph": "द", "roman": "da", "slug": "da", "note": "dental"},
                 {"glyph": "ध", "roman": "dha", "slug": "dha", "note": "dental"},
-                {"glyph": "न", "roman": "na", "slug": "na"}
-            ]
-        },
-        {
-            "id": "pa-varga",
-            "label": "Pa varga",
-            "chars": [
+                {"glyph": "न", "roman": "na", "slug": "na"},
                 {"glyph": "प", "roman": "pa", "slug": "pa"},
                 {"glyph": "फ", "roman": "pha", "slug": "pha"},
                 {"glyph": "ब", "roman": "ba", "slug": "ba"},
                 {"glyph": "भ", "roman": "bha", "slug": "bha"},
-                {"glyph": "म", "roman": "ma", "slug": "ma"}
-            ]
-        },
-        {
-            "id": "antastha",
-            "label": "Semivowels",
-            "chars": [
+                {"glyph": "म", "roman": "ma", "slug": "ma"},
                 {"glyph": "य", "roman": "ya", "slug": "ya"},
                 {"glyph": "र", "roman": "ra", "slug": "ra"},
                 {"glyph": "ल", "roman": "la", "slug": "la"},
-                {"glyph": "व", "roman": "wa", "slug": "wa", "note": "between w and b"}
-            ]
-        },
-        {
-            "id": "ushma",
-            "label": "Sibilants & ha",
-            "chars": [
+                {"glyph": "व", "roman": "wa", "slug": "wa", "note": "between w and b"},
                 {"glyph": "श", "roman": "sha", "slug": "sha", "note": "talavya sha", "tts": "तालव्य श"},
                 {"glyph": "ष", "roman": "ṣa", "slug": "ssa", "note": "murdhanya ṣa — sounds like sha", "tts": "मूर्धन्य ष"},
                 {"glyph": "स", "roman": "sa", "slug": "sa", "note": "dantya sa", "tts": "दन्त्य स"},
-                {"glyph": "ह", "roman": "ha", "slug": "ha"}
-            ]
-        },
-        {
-            "id": "sanyukta",
-            "label": "Conjuncts",
-            "chars": [
+                {"glyph": "ह", "roman": "ha", "slug": "ha"},
                 {"glyph": "क्ष", "roman": "chhya", "slug": "kshya", "note": "क + ष; Nepali reading chhya"},
                 {"glyph": "त्र", "roman": "tra", "slug": "tra", "note": "त + र"},
                 {"glyph": "ज्ञ", "roman": "gya", "slug": "gya", "note": "ज + ञ; Nepali reading gya"}
             ]
         },
         {
-            "id": "digits-1",
-            "label": "Digits I",
+            "id": "digits",
+            "label": "Digits",
             "chars": [
                 {"glyph": "०", "roman": "0 · shunya", "slug": "d0", "tts": "शून्य"},
                 {"glyph": "१", "roman": "1 · ek", "slug": "d1", "tts": "एक"},
                 {"glyph": "२", "roman": "2 · dui", "slug": "d2", "tts": "दुई"},
                 {"glyph": "३", "roman": "3 · tin", "slug": "d3", "tts": "तीन"},
-                {"glyph": "४", "roman": "4 · char", "slug": "d4", "tts": "चार"}
-            ]
-        },
-        {
-            "id": "digits-2",
-            "label": "Digits II",
-            "chars": [
+                {"glyph": "४", "roman": "4 · char", "slug": "d4", "tts": "चार"},
                 {"glyph": "५", "roman": "5 · panch", "slug": "d5", "tts": "पाँच"},
                 {"glyph": "६", "roman": "6 · chha", "slug": "d6", "tts": "छ"},
                 {"glyph": "७", "roman": "7 · saat", "slug": "d7", "tts": "सात"},

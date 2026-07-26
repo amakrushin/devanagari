@@ -10,4 +10,4 @@ a spaced-repetition drill of vowels, consonants and digits.
 ## Development
 
     python -m http.server 8000    # then open http://localhost:8000
-    node --test tests/            # scheduler and data tests
+    node --test                   # scheduler and data tests

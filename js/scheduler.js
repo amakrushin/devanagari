@@ -63,10 +63,11 @@ export function buildSession(progress, data, now, {size = 15, maxNew = 3, maxHot
     const picked = new Set();
     const queue = [];
     const push = (slug, isNew = false) => {
-        if (queue.length < size && !picked.has(slug)) {
-            picked.add(slug);
-            queue.push({slug, isNew});
-        }
+        if (queue.length >= size || picked.has(slug))
+            return false;
+        picked.add(slug);
+        queue.push({slug, isNew});
+        return true;
     };
 
     met.filter(slug => progress.chars[slug].hotLeft > 0)
@@ -75,13 +76,17 @@ export function buildSession(progress, data, now, {size = 15, maxNew = 3, maxHot
     met.filter(slug => progress.chars[slug].due <= now)
         .sort(byWeakness)
         .forEach(slug => push(slug));
+    // New characters round-robin across unlocked groups, in data order within each.
+    const introPools = data.groups.slice(0, progress.activeGroup + 1)
+        .map(g => g.chars.filter(c => !progress.chars[c.slug] && !picked.has(c.slug)));
     let introduced = 0;
-    for (const c of data.groups[progress.activeGroup].chars) {
-        if (introduced >= maxNew)
-            break;
-        if (!progress.chars[c.slug] && !picked.has(c.slug)) {
-            push(c.slug, true);
-            introduced += 1;
+    while (introduced < maxNew && introPools.some(pool => pool.length)) {
+        for (const pool of introPools) {
+            if (introduced >= maxNew)
+                break;
+            const c = pool.shift();
+            if (c && push(c.slug, true))
+                introduced += 1;
         }
     }
     [...met].sort(byWeakness).forEach(slug => push(slug));
