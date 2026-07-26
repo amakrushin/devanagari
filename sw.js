@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'devanagari-v0.1.0';
+const CACHE_VERSION = 'devanagari-v0.1.1';
 
 const SHELL = [
     './',
@@ -7,6 +7,7 @@ const SHELL = [
     './js/app.js',
     './js/scheduler.js',
     './js/audio.js',
+    './js/sound.js',
     './characters.json',
     './manifest.webmanifest',
     './icons/icon-192.png',

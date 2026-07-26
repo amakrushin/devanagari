@@ -1,6 +1,7 @@
 import * as sched from './scheduler.js';
+import * as sound from './sound.js';
 
-const APP_VERSION = '0.1.0';
+const APP_VERSION = '0.1.1';
 const PROGRESS_KEY = 'devanagari.progress';
 
 const state = {
@@ -70,7 +71,16 @@ function renderHome() {
     });
 }
 
+function clearQuizZones() {
+    const stage = $('quiz-stage');
+    const actions = $('quiz-actions');
+    stage.textContent = '';
+    actions.textContent = '';
+    return {stage, actions};
+}
+
 function startSession() {
+    sound.sessionStart();
     state.queue = sched.buildSession(state.progress, state.data, Date.now());
     state.pos = 0;
     state.asked = 0;
@@ -97,26 +107,24 @@ function step() {
 
 function showMeet(item) {
     const c = state.bySlug.get(item.slug);
-    const body = $('quiz-body');
-    body.textContent = '';
-    body.append(el('p', 'tag', 'new letter'), el('p', 'glyph', c.glyph), el('p', 'roman-big', c.roman));
+    const {stage, actions} = clearQuizZones();
+    stage.append(el('p', 'tag', 'new letter'), el('p', 'glyph', c.glyph), el('p', 'roman-big', c.roman));
     if (c.note)
-        body.append(el('p', 'note', c.note));
+        stage.append(el('p', 'note', c.note));
     const btn = el('button', 'btn btn-primary', 'Continue');
     btn.addEventListener('click', () => {
         sched.meetChar(state.progress, c.slug, Date.now());
         saveProgress();
         showQuestion(item);
     });
-    body.append(btn);
+    actions.append(btn);
 }
 
 function showQuestion(item) {
     const c = state.bySlug.get(item.slug);
     const options = sched.shuffle([c.slug, ...sched.pickDistractors(state.data, state.progress, c.slug)]);
-    const body = $('quiz-body');
-    body.textContent = '';
-    body.append(el('p', 'glyph', c.glyph));
+    const {stage, actions} = clearQuizZones();
+    stage.append(el('p', 'glyph', c.glyph));
     const grid = el('div', 'options');
     const buttons = new Map();
     for (const slug of options) {
@@ -125,7 +133,7 @@ function showQuestion(item) {
         buttons.set(slug, btn);
         grid.append(btn);
     }
-    body.append(grid);
+    actions.append(grid);
 }
 
 function answer(item, chosen, buttons) {
@@ -155,18 +163,19 @@ function answer(item, chosen, buttons) {
 }
 
 function showSummary() {
-    const body = $('quiz-body');
-    body.textContent = '';
-    const summary = el('div', 'summary');
-    summary.append(
+    sound.results();
+    const {stage, actions} = clearQuizZones();
+    stage.append(
         el('p', 'big', `${state.correct} / ${state.asked}`),
         el('p', 'note', 'correct answers'));
     for (const label of state.unlocked)
-        summary.append(el('p', 'unlock-note', `New group unlocked: ${label}`));
+        stage.append(el('p', 'unlock-note', `New group unlocked: ${label}`));
     const btn = el('button', 'btn btn-primary', 'Done');
-    btn.addEventListener('click', renderHome);
-    summary.append(btn);
-    body.append(summary);
+    btn.addEventListener('click', () => {
+        sound.click();
+        renderHome();
+    });
+    actions.append(btn);
 }
 
 function resetProgress() {
@@ -193,6 +202,7 @@ async function init() {
     $('btn-reset').addEventListener('click', resetProgress);
     $('btn-quit').addEventListener('click', renderHome);
     renderHome();
+    sound.appStart();
     if ('serviceWorker' in navigator)
         navigator.serviceWorker.register('./sw.js').catch(() => {});
 }
