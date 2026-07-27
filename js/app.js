@@ -3,7 +3,7 @@ import * as sound from './sound.js';
 import * as words from './words.js';
 import * as stats from './stats.js';
 
-const APP_VERSION = '0.1.5';
+const APP_VERSION = '0.1.6';
 const PROGRESS_KEY = 'devanagari.progress';
 
 const state = {
@@ -50,6 +50,11 @@ function loadProgress() {
 
 function saveProgress() {
     localStorage.setItem(PROGRESS_KEY, JSON.stringify(state.progress));
+}
+
+// All groups are open by design for now; gating may return with future content.
+function openAllGroups(progress) {
+    progress.activeGroup = state.data.groups.length - 1;
 }
 
 function show(id) {
@@ -371,8 +376,7 @@ async function importProgress(file) {
     if (!confirm('Replace current progress with the loaded file?'))
         return;
     state.progress = normalized;
-    // All groups are open by design for now, matching init().
-    state.progress.activeGroup = state.data.groups.length - 1;
+    openAllGroups(state.progress);
     saveProgress();
     renderHome();
 }
@@ -383,6 +387,7 @@ function resetProgress() {
         return;
     localStorage.removeItem(PROGRESS_KEY);
     state.progress = sched.initProgress();
+    openAllGroups(state.progress);
     renderHome();
 }
 
@@ -427,8 +432,7 @@ async function init() {
         // Words are optional: sessions simply run without word cards.
     }
     state.progress = loadProgress();
-    // All groups are open by design for now; gating may return with future content.
-    state.progress.activeGroup = state.data.groups.length - 1;
+    openAllGroups(state.progress);
     $('app-version').textContent = `v${APP_VERSION}`;
     $('btn-start').addEventListener('click', startSession);
     $('btn-share').addEventListener('click', shareApp);
