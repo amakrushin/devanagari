@@ -13,6 +13,12 @@ export const LEARNED_BOX = 2;
 
 export const PROGRESS_VERSION = 2;
 
+// Upper bound for the "new items per session" setting; the lower bound is 0
+// (a review-only session).
+export const MAX_NEW_LIMIT = 10;
+
+const DEFAULT_MAX_NEW = 3;
+
 // v0/v1 stored the selected course as a group index; this was the only group
 // order ever shipped with numeric selection.
 const V1_GROUP_ORDER = ['characters', 'digits'];
@@ -26,6 +32,9 @@ export function initProgress() {
         sessions: 0,
         words: {},
         stats: {daysActive: 0, streak: 0, lastDay: null, timeMs: 0},
+        settings: {maxNew: DEFAULT_MAX_NEW},
+        // Every fresh profile gets its own introduction order (see buildSession).
+        introSeed: Math.floor(Math.random() * 2 ** 31),
     };
 }
 
@@ -45,6 +54,10 @@ export function normalizeProgress(parsed, data) {
         // v0 -> v1: word cards and practice stats arrived with v1.
         words: parsed.words ?? fresh.words,
         stats: {...fresh.stats, ...(parsed.stats ?? {})},
+        settings: normalizeSettings(parsed.settings),
+        // Profiles saved before the seed existed keep the canonical data
+        // order (null); only genuinely fresh profiles get a shuffle seed.
+        introSeed: Number.isInteger(parsed.introSeed) ? parsed.introSeed : null,
         // v1 -> v2: selection is stored by group id so group reorders never
         // re-point old progress at a different course.
         selectedGroup: migrateSelectedGroup(parsed.selectedGroup, data),
@@ -56,6 +69,13 @@ export function normalizeProgress(parsed, data) {
 function migrateSelectedGroup(selected, data) {
     const id = typeof selected === 'number' ? V1_GROUP_ORDER[selected] : selected;
     return data.groups.some(g => g.id === id) ? id : data.groups[0].id;
+}
+
+function normalizeSettings(settings) {
+    const raw = settings?.maxNew;
+    const maxNew = typeof raw === 'number' && Number.isFinite(raw)
+        ? Math.round(raw) : DEFAULT_MAX_NEW;
+    return {maxNew: Math.min(MAX_NEW_LIMIT, Math.max(0, maxNew))};
 }
 
 export function meetChar(progress, slug, now) {
@@ -121,9 +141,11 @@ export function buildSession(progress, data, now, {size = 15, maxNew = 3, maxHot
     met.filter(slug => progress.chars[slug].due <= now)
         .sort(byWeakness)
         .forEach(slug => push(slug));
-    // New characters round-robin across the groups in scope, in data order within each.
+    // New characters round-robin across the groups in scope; within each group
+    // the canonical data order, reshuffled per profile when a seed is present.
     const introPools = scoped
-        .map(g => g.chars.filter(c => !progress.chars[c.slug] && !picked.has(c.slug)));
+        .map(g => orderIntro(g.chars.filter(c => !progress.chars[c.slug] && !picked.has(c.slug)),
+            progress.introSeed));
     let introduced = 0;
     while (introduced < maxNew && introPools.some(pool => pool.length)) {
         for (const pool of introPools) {
@@ -136,6 +158,23 @@ export function buildSession(progress, data, now, {size = 15, maxNew = 3, maxHot
     }
     [...met].sort(byWeakness).forEach(slug => push(slug));
     return queue;
+}
+
+// FNV-1a of the slug mixed with the profile seed: a stable random-looking
+// rank, so one profile always meets items in the same order.
+function introRank(seed, slug) {
+    let h = (seed ^ 0x811c9dc5) >>> 0;
+    for (const ch of slug) {
+        h ^= ch.codePointAt(0);
+        h = Math.imul(h, 0x01000193) >>> 0;
+    }
+    return h;
+}
+
+function orderIntro(pool, seed) {
+    if (seed == null)
+        return pool;
+    return [...pool].sort((a, b) => introRank(seed, a.slug) - introRank(seed, b.slug));
 }
 
 export function shuffle(items) {

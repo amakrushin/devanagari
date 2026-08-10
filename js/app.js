@@ -3,7 +3,7 @@ import * as sound from './sound.js';
 import * as words from './words.js';
 import * as stats from './stats.js';
 
-const APP_VERSION = '0.1.6';
+const APP_VERSION = '0.2.0';
 const PROGRESS_KEY = 'devanagari.progress';
 
 const state = {
@@ -31,9 +31,16 @@ function el(tag, className, text) {
     return node;
 }
 
-// Multi-character glyphs (words, long conjunct words) need the smaller size.
+// Multi-character glyphs (words, long conjunct words) need the smaller size;
+// multi-word phrases need an even smaller, wrapping one.
 function glyphClass(glyph) {
+    if (isPhrase(glyph))
+        return 'glyph glyph-phrase';
     return [...glyph].length > 3 ? 'glyph glyph-word' : 'glyph';
+}
+
+function isPhrase(glyph) {
+    return glyph.includes(' ');
 }
 
 function loadProgress() {
@@ -91,8 +98,11 @@ function renderHome() {
         fill.style.width = `${Math.round(100 * learned / group.chars.length)}%`;
         bar.append(fill);
         // Large groups would flood the row; show a taste of the content.
-        const preview = group.chars.slice(0, 40).map(c => c.glyph).join(' ')
-            + (group.chars.length > 40 ? ' …' : '');
+        // Phrase groups get fewer items and a visible separator.
+        const phrases = group.chars.some(c => isPhrase(c.glyph));
+        const shown = phrases ? 6 : 40;
+        const preview = group.chars.slice(0, shown).map(c => c.glyph).join(phrases ? ' · ' : ' ')
+            + (group.chars.length > shown ? ' …' : '');
         row.append(top, el('div', 'group-glyphs', preview), bar);
         if (!locked) {
             row.addEventListener('click', () => {
@@ -104,6 +114,21 @@ function renderHome() {
         }
         list.append(row);
     });
+    renderMaxNew();
+}
+
+function renderMaxNew() {
+    $('maxnew-value').textContent = String(state.progress.settings.maxNew);
+}
+
+// Only the value span updates: re-rendering the whole home screen here would
+// reset the group list's scroll position.
+function bumpMaxNew(delta) {
+    sound.click();
+    const settings = state.progress.settings;
+    settings.maxNew = Math.max(0, Math.min(sched.MAX_NEW_LIMIT, settings.maxNew + delta));
+    saveProgress();
+    renderMaxNew();
 }
 
 function clearQuizZones() {
@@ -120,7 +145,8 @@ function startSession() {
     const groupIndex = Math.max(0,
         state.data.groups.findIndex(g => g.id === state.progress.selectedGroup));
     state.queue = words.insertWordCards(
-        sched.buildSession(state.progress, state.data, Date.now(), {groupIndex}),
+        sched.buildSession(state.progress, state.data, Date.now(),
+            {groupIndex, maxNew: state.progress.settings.maxNew}),
         words.pickWords(state.words, state.progress));
     state.pos = 0;
     state.asked = 0;
@@ -168,7 +194,8 @@ function showMeet(item) {
     sound.newChar();
     const c = state.bySlug.get(item.slug);
     const {stage, actions} = clearQuizZones();
-    const tag = state.groupBySlug.get(item.slug)?.quiz === 'recall' ? 'new word' : 'new character';
+    const tag = isPhrase(c.glyph) ? 'new phrase'
+        : state.groupBySlug.get(item.slug)?.quiz === 'recall' ? 'new word' : 'new character';
     stage.append(el('p', 'tag', tag), el('p', glyphClass(c.glyph), c.glyph),
         el('p', 'roman-big', c.roman));
     if (c.note)
@@ -189,7 +216,8 @@ function showRecall(item) {
     sound.newChar();
     const c = state.bySlug.get(item.slug);
     const {stage, actions} = clearQuizZones();
-    stage.append(el('p', 'tag', 'word'), el('p', glyphClass(c.glyph), c.glyph));
+    stage.append(el('p', 'tag', isPhrase(c.glyph) ? 'phrase' : 'word'),
+        el('p', glyphClass(c.glyph), c.glyph));
     const btn = el('button', 'btn btn-primary', 'Continue');
     btn.addEventListener('click', () => {
         sound.click();
@@ -435,6 +463,8 @@ async function init() {
     openAllGroups(state.progress);
     $('app-version').textContent = `v${APP_VERSION}`;
     $('btn-start').addEventListener('click', startSession);
+    $('btn-newless').addEventListener('click', () => bumpMaxNew(-1));
+    $('btn-newmore').addEventListener('click', () => bumpMaxNew(1));
     $('btn-share').addEventListener('click', shareApp);
     $('btn-export').addEventListener('click', exportProgress);
     $('btn-import').addEventListener('click', () => {

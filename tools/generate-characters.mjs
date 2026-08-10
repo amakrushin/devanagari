@@ -1,13 +1,14 @@
 // Regenerates the derived groups of characters.json: combos (barakhari grid),
-// conjuncts (from CONJUNCT_SLUGS in js/words.js) and words (the daily list
-// below), plus the generated confusable pairs. The characters and digits
-// groups pass through untouched. Deterministic and idempotent: rerunning on
-// its own output is byte-identical.
+// conjuncts (from CONJUNCT_SLUGS in js/words.js), words (the daily list
+// below) and the phrase topics (from tools/phrases.mjs), plus the generated
+// confusable pairs. The characters and digits groups pass through untouched.
+// Deterministic and idempotent: rerunning on its own output is byte-identical.
 //
 // Usage: node tools/generate-characters.mjs
 
 import {readFileSync, writeFileSync} from 'node:fs';
 import {CONJUNCT_SLUGS, decomposeWord, romanizeWord} from '../js/words.js';
+import {TOPICS} from './phrases.mjs';
 
 const DATA_PATH = new URL('../characters.json', import.meta.url);
 
@@ -151,6 +152,33 @@ function slugFromRoman(roman) {
     return [...roman].map(ch => SLUG_LETTERS.get(ch) ?? ch).join('');
 }
 
+// Phrase slugs: the roman with the diacritics expanded, everything else
+// (spaces, ?, nasal tildes) dropped. The x prefix keeps them clear of every
+// character and word slug, present and future: no roman ever produces an x.
+function phraseSlug(roman) {
+    return ('x' + slugFromRoman(roman)).normalize('NFD').replace(/[^a-z0-9]/g, '');
+}
+
+// Hand-written phrase romans may use only the taught diacritics, nasalized
+// vowels (precomposed or with a combining tilde), spaces and question marks.
+const PHRASE_ROMAN = /^[a-zāīūṁḥṅñṭḍṇṣãẽĩõũ\u0303 ?]+$/;
+
+// A phrase is two or more space-separated Devanagari words, optionally closed
+// by a single danda or question mark. Numbers stay out: digits are their own group.
+function validatePhraseGlyph(glyph) {
+    if (glyph !== glyph.normalize('NFC'))
+        fail(`phrase ${glyph} is not NFC-normalized`);
+    if ([...glyph].length > 35)
+        fail(`phrase ${glyph} is too long for the card`);
+    const body = /[।?]$/.test(glyph) ? glyph.slice(0, -1) : glyph;
+    if (!body.includes(' '))
+        fail(`phrase ${glyph} must be at least two words`);
+    for (const word of body.split(' ')) {
+        if (!word || !/^[ऀ-ॿ]+$/.test(word) || /[।॥०-९]/.test(word))
+            fail(`phrase ${glyph} has an unexpected token "${word}"`);
+    }
+}
+
 function fail(message) {
     console.error(`generate-characters: ${message}`);
     process.exit(1);
@@ -232,12 +260,32 @@ const wordChars = WORDS.map(([glyph, meaning]) => {
 if (wordChars.length !== 100)
     fail(`expected 100 words, found ${wordChars.length}`);
 
+// Phrases: hand-romanized sentences, so no decomposeWord round-trip — they use
+// spaces, sentence punctuation and conjuncts beyond the taught set.
+const phraseGroups = TOPICS.map(topic => ({
+    id: topic.id,
+    label: topic.label,
+    quiz: 'recall',
+    chars: topic.phrases.map(([glyph, roman, meaning]) => {
+        validatePhraseGlyph(glyph);
+        if (!roman || !PHRASE_ROMAN.test(roman))
+            fail(`phrase ${glyph} roman "${roman}" has unexpected characters`);
+        if (!meaning)
+            fail(`phrase ${glyph} needs a meaning`);
+        const slug = phraseSlug(roman);
+        if (!/^x[a-z0-9]+$/.test(slug))
+            fail(`phrase ${glyph} slug ${slug} is not plain ascii`);
+        return {glyph, roman, slug, note: meaning};
+    }),
+}));
+
 const groups = [
     {id: 'characters', label: characters.label, chars: baseChars},
     {id: 'combos', label: 'Combinations', chars: combos},
     {id: 'conjuncts', label: 'Compounds', chars: conjuncts},
     {id: 'words', label: 'Words', quiz: 'recall', chars: wordChars},
     {id: 'digits', label: digits.label, chars: digits.chars},
+    ...phraseGroups,
 ];
 
 // Idempotency: keep only the hand-written confusables (both slugs in the
@@ -294,7 +342,7 @@ for (let i = 0; i < confusables.length; i += 6) {
         .map(pair => JSON.stringify(pair).replaceAll('","', '", "')).join(', '));
 }
 
-const out = '{\n    "version": 3,\n    "groups": [\n'
+const out = '{\n    "version": 4,\n    "groups": [\n'
     + groups.map(groupBlock).join(',\n')
     + '\n    ],\n    "confusables": [\n'
     + confusableLines.join(',\n')

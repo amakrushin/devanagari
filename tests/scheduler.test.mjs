@@ -52,6 +52,7 @@ test('BuildSessionIntroducesAtMostThreeNewCharacters', () => {
 
 test('BuildSessionInterleavesIntroductionsAcrossGroups', () => {
     const progress = sched.initProgress();
+    progress.introSeed = null;
     progress.activeGroup = data.groups.length - 1;
     const queue = sched.buildSession(progress, data, NOW);
     // Round-robin takes the first new character of each open group in order.
@@ -106,10 +107,40 @@ test('BuildSessionWithGroupIndexUsesOnlyThatGroup', () => {
 test('BuildSessionWithGroupIndexIntroducesOnlyItsCharacters', () => {
     const digitsIndex = data.groups.findIndex(g => g.id === 'digits');
     const progress = sched.initProgress();
+    progress.introSeed = null;
     progress.activeGroup = digitsIndex;
     const queue = sched.buildSession(progress, data, NOW, {groupIndex: digitsIndex});
     assert.deepEqual(queue.map(item => item.slug), ['d0', 'd1', 'd2']);
     assert.ok(queue.every(item => item.isNew));
+});
+
+test('BuildSessionHonorsMaxNewOverride', () => {
+    const progress = sched.initProgress();
+    assert.equal(sched.buildSession(progress, data, NOW, {maxNew: 0}).length, 0);
+    const five = sched.buildSession(progress, data, NOW, {maxNew: 5});
+    assert.equal(five.length, 5);
+    assert.ok(five.every(item => item.isNew));
+});
+
+test('SeededIntroductionIsStablePerProfile', () => {
+    const progress = sched.initProgress();
+    progress.introSeed = 424242;
+    const first = sched.buildSession(progress, data, NOW, {maxNew: 10}).map(item => item.slug);
+    const second = sched.buildSession(progress, data, NOW, {maxNew: 10}).map(item => item.slug);
+    assert.deepEqual(first, second);
+    progress.introSeed = null;
+    const canonical = sched.buildSession(progress, data, NOW, {maxNew: 10}).map(item => item.slug);
+    assert.notDeepEqual(first, canonical);
+});
+
+test('DifferentSeedsChangeIntroductionOrder', () => {
+    const one = sched.initProgress();
+    one.introSeed = 1;
+    const two = sched.initProgress();
+    two.introSeed = 2;
+    const queueOne = sched.buildSession(one, data, NOW, {maxNew: 10}).map(item => item.slug);
+    const queueTwo = sched.buildSession(two, data, NOW, {maxNew: 10}).map(item => item.slug);
+    assert.notDeepEqual(queueOne, queueTwo);
 });
 
 test('TryUnlockAdvancesWhenActiveGroupLearned', () => {
@@ -157,6 +188,30 @@ test('InitProgressSelectsCharactersById', () => {
     const progress = sched.initProgress();
     assert.equal(progress.selectedGroup, 'characters');
     assert.equal(progress.v, sched.PROGRESS_VERSION);
+});
+
+test('InitProgressHasDefaultSettings', () => {
+    assert.deepEqual(sched.initProgress().settings, {maxNew: 3});
+});
+
+test('InitProgressAssignsIntroSeed', () => {
+    assert.ok(Number.isInteger(sched.initProgress().introSeed));
+});
+
+test('NormalizeFillsAndClampsSettings', () => {
+    const normalized = value =>
+        sched.normalizeProgress({v: 2, chars: {}, settings: value}, data).settings;
+    assert.deepEqual(sched.normalizeProgress({v: 2, chars: {}}, data).settings, {maxNew: 3});
+    assert.deepEqual(normalized({maxNew: 99}), {maxNew: 10});
+    assert.deepEqual(normalized({maxNew: -5}), {maxNew: 0});
+    assert.deepEqual(normalized({maxNew: 'x'}), {maxNew: 3});
+    assert.deepEqual(normalized(5), {maxNew: 3});
+});
+
+test('NormalizeKeepsCanonicalOrderForOldBackups', () => {
+    assert.equal(sched.normalizeProgress({v: 1, chars: {}}, data).introSeed, null);
+    assert.equal(sched.normalizeProgress({v: 2, chars: {}, introSeed: 123}, data).introSeed, 123);
+    assert.equal(sched.normalizeProgress({v: 2, chars: {}, introSeed: 'abc'}, data).introSeed, null);
 });
 
 test('NormalizeMapsNumericSelectionByHistoricalOrder', () => {

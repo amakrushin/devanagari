@@ -8,13 +8,17 @@ const chars = data.groups.flatMap(g => g.chars);
 const bySlug = new Map(chars.map(c => [c.slug, c]));
 const group = id => data.groups.find(g => g.id === id);
 
-test('HasFiveGroupsInPedagogicalOrder', () => {
+const PHRASE_GROUP_IDS = ['greetings', 'basics', 'shopping', 'time', 'directions',
+    'transport', 'food', 'smalltalk', 'questions', 'grammar', 'artschool'];
+
+test('HasSixteenGroupsInPedagogicalOrder', () => {
     assert.deepEqual(data.groups.map(g => g.id),
-        ['characters', 'combos', 'conjuncts', 'words', 'digits']);
+        ['characters', 'combos', 'conjuncts', 'words', 'digits', ...PHRASE_GROUP_IDS]);
 });
 
 test('GroupSizesMatchCourseDesign', () => {
-    assert.deepEqual(data.groups.map(g => g.chars.length), [49, 395, 44, 100, 10]);
+    assert.deepEqual(data.groups.map(g => g.chars.length),
+        [49, 395, 44, 100, 10, 25, 25, 30, 30, 30, 25, 30, 25, 25, 30, 30]);
 });
 
 // The restore guarantee: progress boxes are keyed by these slugs, and old
@@ -104,6 +108,25 @@ test('WordsCarryMeaningAndDecompose', () => {
         assert.ok(decomposeWord(c.glyph), `${c.glyph} must decompose`);
         assert.equal(c.roman, romanizeWord(c.glyph, taught), `roman of ${c.glyph}`);
         assert.equal(c.glyph, c.glyph.normalize('NFC'), `${c.glyph} must be NFC`);
+    }
+});
+
+test('PhraseGroupsAreRecallCardsWithMeanings', () => {
+    for (const id of PHRASE_GROUP_IDS) {
+        const g = group(id);
+        assert.equal(g.quiz, 'recall', `${id} must be a recall group`);
+        for (const c of g.chars) {
+            assert.equal(c.glyph, c.glyph.normalize('NFC'), `${c.glyph} must be NFC`);
+            // Devanagari words with single spaces, one optional closing । or ?.
+            assert.match(c.glyph, /^[ऀ-ॿ]+( [ऀ-ॿ]+)*\??$/, `phrase shape of ${c.glyph}`);
+            assert.ok(!c.glyph.slice(0, -1).includes('।'), `danda only closes: ${c.glyph}`);
+            assert.ok(c.glyph.includes(' '), `${c.glyph} must be multi-word`);
+            assert.ok(c.note, `meaning for ${c.glyph}`);
+            const withoutI = c.note.replaceAll(/\bI\b/g, 'i');
+            assert.equal(withoutI, withoutI.toLowerCase(), `meaning case for ${c.glyph}`);
+            assert.ok(c.roman && !/[ऀ-ॿ]/.test(c.roman), `roman of ${c.glyph}`);
+            assert.match(c.slug, /^x[a-z0-9]+$/, `slug of ${c.glyph}`);
+        }
     }
 });
 

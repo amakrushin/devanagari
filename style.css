@@ -110,6 +110,20 @@ body {
 }
 .bar > div { height: 100%; background: var(--accent); border-radius: inherit; }
 
+.setting-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--muted);
+}
+.stepper { display: inline-flex; align-items: center; }
+.setting-value {
+    min-width: 1.5rem;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+}
+
 .home-footer {
     display: flex;
     flex-wrap: wrap;
@@ -220,6 +234,13 @@ body {
 .glyph-word {
     font-size: min(4.5rem, 16vw, 14dvh);
     overflow-wrap: anywhere;
+}
+
+/* Whole sentences: smaller still, wrapping at their spaces; the loose
+   line-height leaves headroom for stacked matras. */
+.glyph-phrase {
+    font-size: min(2.8rem, 10vw, 9dvh);
+    line-height: 1.5;
 }
 
 .roman-big { font-size: 2rem; text-align: center; margin: 0; }

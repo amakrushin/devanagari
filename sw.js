@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'devanagari-v0.1.6';
+const CACHE_VERSION = 'devanagari-v0.2.0';
 
 const SHELL = [
     './',
