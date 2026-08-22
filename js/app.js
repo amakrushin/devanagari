@@ -2,8 +2,9 @@ import * as sched from './scheduler.js';
 import * as sound from './sound.js';
 import * as words from './words.js';
 import * as stats from './stats.js';
+import * as audio from './audio.js';
 
-const APP_VERSION = '0.2.0';
+const APP_VERSION = '0.3.0';
 const PROGRESS_KEY = 'devanagari.progress';
 
 const state = {
@@ -41,6 +42,16 @@ function glyphClass(glyph) {
 
 function isPhrase(glyph) {
     return glyph.includes(' ');
+}
+
+// No click chime here: a chime layered under speech muddies the clip.
+function playButton(slug) {
+    if (!audio.resolveClip(slug))
+        return null;
+    const btn = el('button', 'btn-icon btn-play', '▶︎');
+    btn.setAttribute('aria-label', 'Play pronunciation');
+    btn.addEventListener('click', () => audio.playClip(slug));
+    return btn;
 }
 
 function loadProgress() {
@@ -192,6 +203,7 @@ function trackCardTime() {
 
 function showMeet(item) {
     sound.newChar();
+    audio.preload(item.slug);
     const c = state.bySlug.get(item.slug);
     const {stage, actions} = clearQuizZones();
     const tag = isPhrase(c.glyph) ? 'new phrase'
@@ -200,6 +212,9 @@ function showMeet(item) {
         el('p', 'roman-big', c.roman));
     if (c.note)
         stage.append(el('p', 'note', c.note));
+    const play = playButton(item.slug);
+    if (play)
+        stage.append(play);
     const btn = el('button', 'btn btn-primary', 'Continue');
     btn.addEventListener('click', () => {
         sound.click();
@@ -214,6 +229,7 @@ function showMeet(item) {
 // A daily word: try reading it yourself, reveal the answer, then grade honestly.
 function showRecall(item) {
     sound.newChar();
+    audio.preload(item.slug);
     const c = state.bySlug.get(item.slug);
     const {stage, actions} = clearQuizZones();
     stage.append(el('p', 'tag', isPhrase(c.glyph) ? 'phrase' : 'word'),
@@ -222,6 +238,10 @@ function showRecall(item) {
     btn.addEventListener('click', () => {
         sound.click();
         stage.append(el('p', 'roman-big', c.roman), el('p', 'note', c.note));
+        // Only after the reveal: hearing the clip is hearing the answer.
+        const play = playButton(item.slug);
+        if (play)
+            stage.append(play);
         const grade = (label, correct) => {
             const choice = el('button', 'btn', label);
             choice.addEventListener('click', () => {
@@ -461,6 +481,7 @@ async function init() {
     }
     state.progress = loadProgress();
     openAllGroups(state.progress);
+    audio.loadManifest();
     $('app-version').textContent = `v${APP_VERSION}`;
     $('btn-start').addEventListener('click', startSession);
     $('btn-newless').addEventListener('click', () => bumpMaxNew(-1));

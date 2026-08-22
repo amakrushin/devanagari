@@ -178,6 +178,12 @@ body {
     padding: 0.2rem 0.6rem;
     cursor: pointer;
 }
+/* The stage is a stretch-aligned column; keep the play control compact. */
+.btn-play {
+    align-self: center;
+    font-size: 2rem;
+    color: var(--text);
+}
 
 /* Quiz */
 
