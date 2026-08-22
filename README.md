@@ -13,3 +13,4 @@ grouped by topic.
 
     python -m http.server 8000    # then open http://localhost:8000
     node --test                   # scheduler and data tests
+    node tools/generate-audio.mjs # regenerate phrase audio (needs .venv with gTTS; see tool header)
