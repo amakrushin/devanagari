@@ -4,7 +4,7 @@ import * as words from './words.js';
 import * as stats from './stats.js';
 import * as audio from './audio.js';
 
-const APP_VERSION = '0.3.0';
+const APP_VERSION = '0.3.1';
 const PROGRESS_KEY = 'devanagari.progress';
 
 const state = {
@@ -208,10 +208,14 @@ function showMeet(item) {
     const {stage, actions} = clearQuizZones();
     const tag = isPhrase(c.glyph) ? 'new phrase'
         : state.groupBySlug.get(item.slug)?.quiz === 'recall' ? 'new word' : 'new character';
-    stage.append(el('p', 'tag', tag), el('p', glyphClass(c.glyph), c.glyph),
-        el('p', 'roman-big', c.roman));
-    if (c.note)
-        stage.append(el('p', 'note', c.note));
+    stage.append(el('p', 'tag', tag), el('p', glyphClass(c.glyph), c.glyph));
+    if (isPhrase(c.glyph) || state.groupBySlug.get(item.slug)?.quiz === 'recall') {
+        stage.append(el('p', 'meaning-big', c.note), el('p', 'note', c.roman));
+    } else {
+        stage.append(el('p', 'roman-big', c.roman));
+        if (c.note)
+            stage.append(el('p', 'note', c.note));
+    }
     const play = playButton(item.slug);
     if (play)
         stage.append(play);
@@ -237,7 +241,7 @@ function showRecall(item) {
     const btn = el('button', 'btn btn-primary', 'Continue');
     btn.addEventListener('click', () => {
         sound.click();
-        stage.append(el('p', 'roman-big', c.roman), el('p', 'note', c.note));
+        stage.append(el('p', 'meaning-big', c.note), el('p', 'note', c.roman));
         // Only after the reveal: hearing the clip is hearing the answer.
         const play = playButton(item.slug);
         if (play)
@@ -278,7 +282,7 @@ function showWord(word) {
             revealed = true;
             state.progress.words[word.d] = Date.now();
             saveProgress();
-            stage.append(el('p', 'roman-big', word.r), el('p', 'note', word.e));
+            stage.append(el('p', 'meaning-big', word.e), el('p', 'note', word.r));
             return;
         }
         saveProgress();

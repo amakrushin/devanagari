@@ -250,6 +250,7 @@ body {
 }
 
 .roman-big { font-size: 2rem; text-align: center; margin: 0; }
+.meaning-big { font-size: 2rem; text-align: center; margin: 0; }
 .note { color: var(--muted); text-align: center; margin: 0; }
 
 /* Always 2x2 for the four answers; long labels wrap inside their button. */
