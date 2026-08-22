@@ -4,7 +4,7 @@ import * as words from './words.js';
 import * as stats from './stats.js';
 import * as audio from './audio.js';
 
-const APP_VERSION = '0.3.1';
+const APP_VERSION = '0.3.2';
 const PROGRESS_KEY = 'devanagari.progress';
 
 const state = {

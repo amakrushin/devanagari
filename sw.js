@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'devanagari-v0.3.1';
+const CACHE_VERSION = 'devanagari-v0.3.2';
 // Clips are immutable per slug and heavy, so they live in their own cache
 // that survives shell version bumps.
 const AUDIO_CACHE = 'devanagari-audio-v1';
