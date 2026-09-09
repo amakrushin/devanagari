@@ -4,7 +4,7 @@ import * as words from './words.js';
 import * as stats from './stats.js';
 import * as audio from './audio.js';
 
-const APP_VERSION = '0.3.2';
+const APP_VERSION = '0.4.0';
 const PROGRESS_KEY = 'devanagari.progress';
 
 const state = {
@@ -126,10 +126,26 @@ function renderHome() {
         list.append(row);
     });
     renderMaxNew();
+    renderRecallMode();
 }
 
 function renderMaxNew() {
     $('maxnew-value').textContent = String(state.progress.settings.maxNew);
+}
+
+function saysFirst() {
+    return state.progress.settings.recallMode === 'say';
+}
+
+function renderRecallMode() {
+    $('btn-recall-mode').textContent = saysFirst() ? 'English → Nepali' : 'Nepali → English';
+}
+
+function toggleRecallMode() {
+    sound.click();
+    state.progress.settings.recallMode = saysFirst() ? 'read' : 'say';
+    saveProgress();
+    renderRecallMode();
 }
 
 // Only the value span updates: re-rendering the whole home screen here would
@@ -236,12 +252,17 @@ function showRecall(item) {
     audio.preload(item.slug);
     const c = state.bySlug.get(item.slug);
     const {stage, actions} = clearQuizZones();
-    stage.append(el('p', 'tag', isPhrase(c.glyph) ? 'phrase' : 'word'),
-        el('p', glyphClass(c.glyph), c.glyph));
+    const say = saysFirst();
+    const kind = isPhrase(c.glyph) ? 'phrase' : 'word';
+    stage.append(el('p', 'tag', say ? `say the ${kind}` : kind),
+        say ? el('p', 'meaning-big', c.note) : el('p', glyphClass(c.glyph), c.glyph));
     const btn = el('button', 'btn btn-primary', 'Continue');
     btn.addEventListener('click', () => {
         sound.click();
-        stage.append(el('p', 'meaning-big', c.note), el('p', 'note', c.roman));
+        if (say)
+            stage.append(el('p', glyphClass(c.glyph), c.glyph), el('p', 'note', c.roman));
+        else
+            stage.append(el('p', 'meaning-big', c.note), el('p', 'note', c.roman));
         // Only after the reveal: hearing the clip is hearing the answer.
         const play = playButton(item.slug);
         if (play)
@@ -490,6 +511,7 @@ async function init() {
     $('btn-start').addEventListener('click', startSession);
     $('btn-newless').addEventListener('click', () => bumpMaxNew(-1));
     $('btn-newmore').addEventListener('click', () => bumpMaxNew(1));
+    $('btn-recall-mode').addEventListener('click', toggleRecallMode);
     $('btn-share').addEventListener('click', shareApp);
     $('btn-export').addEventListener('click', exportProgress);
     $('btn-import').addEventListener('click', () => {

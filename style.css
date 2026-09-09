@@ -117,6 +117,16 @@ body {
     color: var(--muted);
 }
 .stepper { display: inline-flex; align-items: center; }
+.btn-toggle {
+    font: inherit;
+    background: none;
+    border: 1px solid var(--card-edge);
+    border-radius: 0.6rem;
+    color: var(--text);
+    padding: 0.3rem 0.7rem;
+    cursor: pointer;
+    touch-action: manipulation;
+}
 .setting-value {
     min-width: 1.5rem;
     text-align: center;

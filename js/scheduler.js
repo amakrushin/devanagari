@@ -18,6 +18,8 @@ export const PROGRESS_VERSION = 2;
 export const MAX_NEW_LIMIT = 10;
 
 const DEFAULT_MAX_NEW = 3;
+const DEFAULT_RECALL_MODE = 'read';
+export const RECALL_MODES = ['read', 'say'];
 
 // v0/v1 stored the selected course as a group index; this was the only group
 // order ever shipped with numeric selection.
@@ -32,7 +34,7 @@ export function initProgress() {
         sessions: 0,
         words: {},
         stats: {daysActive: 0, streak: 0, lastDay: null, timeMs: 0},
-        settings: {maxNew: DEFAULT_MAX_NEW},
+        settings: {maxNew: DEFAULT_MAX_NEW, recallMode: DEFAULT_RECALL_MODE},
         // Every fresh profile gets its own introduction order (see buildSession).
         introSeed: Math.floor(Math.random() * 2 ** 31),
     };
@@ -75,7 +77,9 @@ function normalizeSettings(settings) {
     const raw = settings?.maxNew;
     const maxNew = typeof raw === 'number' && Number.isFinite(raw)
         ? Math.round(raw) : DEFAULT_MAX_NEW;
-    return {maxNew: Math.min(MAX_NEW_LIMIT, Math.max(0, maxNew))};
+    const recallMode = RECALL_MODES.includes(settings?.recallMode)
+        ? settings.recallMode : DEFAULT_RECALL_MODE;
+    return {maxNew: Math.min(MAX_NEW_LIMIT, Math.max(0, maxNew)), recallMode};
 }
 
 export function meetChar(progress, slug, now) {

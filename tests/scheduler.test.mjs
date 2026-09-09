@@ -191,7 +191,7 @@ test('InitProgressSelectsCharactersById', () => {
 });
 
 test('InitProgressHasDefaultSettings', () => {
-    assert.deepEqual(sched.initProgress().settings, {maxNew: 3});
+    assert.deepEqual(sched.initProgress().settings, {maxNew: 3, recallMode: 'read'});
 });
 
 test('InitProgressAssignsIntroSeed', () => {
@@ -201,11 +201,22 @@ test('InitProgressAssignsIntroSeed', () => {
 test('NormalizeFillsAndClampsSettings', () => {
     const normalized = value =>
         sched.normalizeProgress({v: 2, chars: {}, settings: value}, data).settings;
-    assert.deepEqual(sched.normalizeProgress({v: 2, chars: {}}, data).settings, {maxNew: 3});
-    assert.deepEqual(normalized({maxNew: 99}), {maxNew: 10});
-    assert.deepEqual(normalized({maxNew: -5}), {maxNew: 0});
-    assert.deepEqual(normalized({maxNew: 'x'}), {maxNew: 3});
-    assert.deepEqual(normalized(5), {maxNew: 3});
+    const defaults = {maxNew: 3, recallMode: 'read'};
+    assert.deepEqual(sched.normalizeProgress({v: 2, chars: {}}, data).settings, defaults);
+    assert.deepEqual(normalized({maxNew: 99}), {...defaults, maxNew: 10});
+    assert.deepEqual(normalized({maxNew: -5}), {...defaults, maxNew: 0});
+    assert.deepEqual(normalized({maxNew: 'x'}), defaults);
+    assert.deepEqual(normalized(5), defaults);
+});
+
+test('NormalizeKeepsKnownRecallModeAndDropsUnknown', () => {
+    const normalized = value =>
+        sched.normalizeProgress({v: 2, chars: {}, settings: {recallMode: value}}, data).settings;
+    assert.equal(normalized('say').recallMode, 'say');
+    assert.equal(normalized('read').recallMode, 'read');
+    assert.equal(normalized('shout').recallMode, 'read');
+    assert.equal(normalized(1).recallMode, 'read');
+    assert.deepEqual(sched.RECALL_MODES, ['read', 'say']);
 });
 
 test('NormalizeKeepsCanonicalOrderForOldBackups', () => {
