@@ -1,0 +1,14 @@
+{
+    "name": "hebrew — Hebrew alphabet trainer",
+    "short_name": "hebrew",
+    "id": "./hebrew.html",
+    "start_url": "./hebrew.html",
+    "scope": "./",
+    "display": "standalone",
+    "background_color": "#14100e",
+    "theme_color": "#14100e",
+    "icons": [
+        {"src": "icons/icon-hebrew-192.png", "sizes": "192x192", "type": "image/png"},
+        {"src": "icons/icon-hebrew-512.png", "sizes": "512x512", "type": "image/png"}
+    ]
+}

@@ -40,4 +40,29 @@ for (const { glyph, out, size } of targets) {
     console.log(`${out} <- ${background}`);
 }
 
+// Sibling courses take the same version hue shifted by a third of the wheel
+// each, with one letter of their alphabet drawn in place of the composite.
+const courses = [
+    { id: 'russian', letter: 'Б', font: 'DejaVu-Serif-Bold', shift: 120 },
+    { id: 'hebrew', letter: 'א', font: 'Noto-Serif-Hebrew-Bold', shift: 240 },
+];
+const courseTargets = [
+    { name: id => join('icons', `icon-${id}-512.png`), size: 512 },
+    { name: id => join('icons', `icon-${id}-192.png`), size: 192 },
+    { name: id => join('icons', `apple-touch-icon-${id}.png`), size: 180 },
+];
+for (const { id, letter, font, shift } of courses) {
+    const courseBackground = `hsl(${((hue + shift) % 360).toFixed(1)}, 63%, 43%)`;
+    for (const { name, size } of courseTargets) {
+        const out = name(id);
+        execFileSync('magick', [
+            '-size', `${size}x${size}`, `canvas:${courseBackground}`,
+            '-font', font, '-pointsize', String(Math.round(size * 0.62)),
+            '-fill', 'white', '-gravity', 'center', '-annotate', '+0+0', letter,
+            '-strip', 'PNG24:' + join(root, out),
+        ]);
+        console.log(`${out} <- ${courseBackground}`);
+    }
+}
+
 console.log(`Icons regenerated for v${version}.`);

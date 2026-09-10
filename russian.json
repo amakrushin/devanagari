@@ -1,0 +1,111 @@
+{
+    "version": 1,
+    "groups": [
+        {
+            "id": "vowels",
+            "label": "Vowels",
+            "chars": [
+                {"glyph": "А а", "roman": "अ", "slug": "a"},
+                {"glyph": "О о", "roman": "ओ", "slug": "o"},
+                {"glyph": "У у", "roman": "उ", "slug": "u"},
+                {"glyph": "Э э", "roman": "ए", "slug": "e", "note": "open e, as in English 'end'"},
+                {"glyph": "Ы ы", "roman": "इ", "slug": "y", "note": "no Nepali match: say इ with the tongue pulled back; never starts a word"},
+                {"glyph": "И и", "roman": "ई", "slug": "i"},
+                {"glyph": "Е е", "roman": "ये", "slug": "ye", "note": "ये at the start of a word; after a consonant just े with the consonant softened"},
+                {"glyph": "Ё ё", "roman": "यो", "slug": "yo", "note": "always stressed; print often writes it as е"},
+                {"glyph": "Ю ю", "roman": "यु", "slug": "yu"},
+                {"glyph": "Я я", "roman": "या", "slug": "ya"}
+            ]
+        },
+        {
+            "id": "consonants1",
+            "label": "Consonants 1",
+            "chars": [
+                {"glyph": "М м", "roman": "म", "slug": "m"},
+                {"glyph": "Н н", "roman": "न", "slug": "n"},
+                {"glyph": "Т т", "roman": "त", "slug": "t"},
+                {"glyph": "К к", "roman": "क", "slug": "k"},
+                {"glyph": "Д д", "roman": "द", "slug": "d"},
+                {"glyph": "П п", "roman": "प", "slug": "p"}
+            ]
+        },
+        {
+            "id": "consonants2",
+            "label": "Consonants 2",
+            "chars": [
+                {"glyph": "Р р", "roman": "र", "slug": "r"},
+                {"glyph": "С с", "roman": "स", "slug": "s"},
+                {"glyph": "Л л", "roman": "ल", "slug": "l"},
+                {"glyph": "В в", "roman": "व", "slug": "v"},
+                {"glyph": "Б б", "roman": "ब", "slug": "b"},
+                {"glyph": "Г г", "roman": "ग", "slug": "g"}
+            ]
+        },
+        {
+            "id": "consonants3",
+            "label": "Consonants 3",
+            "chars": [
+                {"glyph": "З з", "roman": "ज़", "slug": "z", "note": "voiced hiss, English z; like ज with the tongue nearly closed"},
+                {"glyph": "Х х", "roman": "ख़", "slug": "kh", "note": "throaty kh from the back of the mouth, as in Hindi ख़"},
+                {"glyph": "Ф ф", "roman": "फ़", "slug": "f", "note": "English f, as in Hindi फ़"},
+                {"glyph": "Ч ч", "roman": "च", "slug": "ch"},
+                {"glyph": "Ш ш", "roman": "श", "slug": "sh"}
+            ]
+        },
+        {
+            "id": "signs",
+            "label": "Signs and rare letters",
+            "chars": [
+                {"glyph": "Й й", "roman": "य", "slug": "yot", "note": "short y after a vowel: ай reads like the end of आइ"},
+                {"glyph": "Ж ж", "roman": "ज", "slug": "zh", "note": "voiced ш, like the s in English 'measure'"},
+                {"glyph": "Ц ц", "roman": "त्स", "slug": "ts", "note": "t and s said together, like the ts in बत्स"},
+                {"glyph": "Щ щ", "roman": "श्श", "slug": "shch", "note": "long soft श, said with a smile"},
+                {"glyph": "ь", "roman": "नरम", "slug": "soft", "note": "soft sign: no sound of its own; softens the consonant before it, like a hint of य"},
+                {"glyph": "ъ", "roman": "कडा", "slug": "hard", "note": "hard sign: no sound; keeps the consonant before it hard and separates it from the vowel"}
+            ]
+        },
+        {
+            "id": "ruwords",
+            "label": "Words",
+            "quiz": "recall",
+            "chars": [
+                {"glyph": "дом", "roman": "दोम", "slug": "wdom", "note": "house"},
+                {"glyph": "мама", "roman": "मामा", "slug": "wmama", "note": "mother"},
+                {"glyph": "папа", "roman": "पापा", "slug": "wpapa", "note": "father"},
+                {"glyph": "да", "roman": "दा", "slug": "wda", "note": "yes"},
+                {"glyph": "нет", "roman": "नेत", "slug": "wnet", "note": "no"},
+                {"glyph": "вода", "roman": "वोदा", "slug": "wvoda", "note": "water"},
+                {"glyph": "хлеб", "roman": "ख़्लेब", "slug": "wkhleb", "note": "bread"},
+                {"glyph": "молоко", "roman": "मोलोको", "slug": "wmoloko", "note": "milk"},
+                {"glyph": "кот", "roman": "कोत", "slug": "wkot", "note": "cat"},
+                {"glyph": "сок", "roman": "सोक", "slug": "wsok", "note": "juice"},
+                {"glyph": "стол", "roman": "स्तोल", "slug": "wstol", "note": "table"},
+                {"glyph": "окно", "roman": "ओक्नो", "slug": "wokno", "note": "window"},
+                {"glyph": "рука", "roman": "रुका", "slug": "wruka", "note": "hand, arm"},
+                {"glyph": "нос", "roman": "नोस", "slug": "wnos", "note": "nose"},
+                {"glyph": "сын", "roman": "सिन", "slug": "wsyn", "note": "son"},
+                {"glyph": "брат", "roman": "ब्रात", "slug": "wbrat", "note": "brother"},
+                {"glyph": "сестра", "roman": "सेस्त्रा", "slug": "wsestra", "note": "sister"},
+                {"glyph": "город", "roman": "गोरोद", "slug": "wgorod", "note": "city"},
+                {"glyph": "утро", "roman": "उत्रो", "slug": "wutro", "note": "morning"},
+                {"glyph": "день", "roman": "देन", "slug": "wden", "note": "day"},
+                {"glyph": "ночь", "roman": "नोच", "slug": "wnoch", "note": "night"},
+                {"glyph": "чай", "roman": "चाइ", "slug": "wchay", "note": "tea"},
+                {"glyph": "суп", "roman": "सुप", "slug": "wsup", "note": "soup"},
+                {"glyph": "мясо", "roman": "म्यासो", "slug": "wmyaso", "note": "meat"},
+                {"glyph": "рыба", "roman": "रिबा", "slug": "wryba", "note": "fish"},
+                {"glyph": "яблоко", "roman": "याब्लोको", "slug": "wyabloko", "note": "apple"},
+                {"glyph": "школа", "roman": "श्कोला", "slug": "wshkola", "note": "school"},
+                {"glyph": "книга", "roman": "क्निगा", "slug": "wkniga", "note": "book"},
+                {"glyph": "друг", "roman": "द्रुग", "slug": "wdrug", "note": "friend"},
+                {"glyph": "мир", "roman": "मिर", "slug": "wmir", "note": "peace, world"},
+                {"glyph": "жизнь", "roman": "जिज़्न", "slug": "wzhizn", "note": "life"},
+                {"glyph": "цена", "roman": "त्सेना", "slug": "wtsena", "note": "price"},
+                {"glyph": "щи", "roman": "श्शी", "slug": "wshchi", "note": "cabbage soup"},
+                {"glyph": "объект", "roman": "ओब्येक्त", "slug": "wobyekt", "note": "object"},
+                {"glyph": "май", "roman": "माइ", "slug": "wmay", "note": "may"}
+            ]
+        }
+    ],
+    "confusables": [["i", "yot"], ["sh", "shch"], ["soft", "hard"], ["ye", "yo"]]
+}

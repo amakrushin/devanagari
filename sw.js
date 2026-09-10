@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'devanagari-v0.4.0';
+const CACHE_VERSION = 'devanagari-v0.5.0';
 // Clips are immutable per slug and heavy, so they live in their own cache
 // that survives shell version bumps.
 const AUDIO_CACHE = 'devanagari-audio-v1';
@@ -6,8 +6,11 @@ const AUDIO_CACHE = 'devanagari-audio-v1';
 const SHELL = [
     './',
     './index.html',
+    './russian.html',
+    './hebrew.html',
     './style.css',
     './js/app.js',
+    './js/courses.js',
     './js/scheduler.js',
     './js/words.js',
     './js/stats.js',
@@ -15,10 +18,20 @@ const SHELL = [
     './js/sound.js',
     './characters.json',
     './words.json',
+    './russian.json',
+    './russian-words.json',
+    './hebrew.json',
+    './hebrew-words.json',
     './audio/manifest.json',
     './manifest.webmanifest',
+    './manifest-russian.webmanifest',
+    './manifest-hebrew.webmanifest',
     './icons/icon-192.png',
     './icons/icon-512.png',
+    './icons/icon-russian-192.png',
+    './icons/icon-russian-512.png',
+    './icons/icon-hebrew-192.png',
+    './icons/icon-hebrew-512.png',
 ];
 
 // Best-effort: a failed clip download never fails the install and is healed
@@ -55,8 +68,7 @@ self.addEventListener('fetch', event => {
     const url = new URL(request.url);
     if (url.origin !== location.origin)
         return;
-    if (url.pathname.endsWith('/characters.json') || url.pathname.endsWith('/words.json')
-        || url.pathname.endsWith('/audio/manifest.json')) {
+    if (url.pathname.endsWith('.json')) {
         // Network-first: data updates should not require a cache version bump.
         event.respondWith(fetch(request)
             .then(response => {

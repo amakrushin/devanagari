@@ -3,9 +3,11 @@ import * as sound from './sound.js';
 import * as words from './words.js';
 import * as stats from './stats.js';
 import * as audio from './audio.js';
+import {COURSES, exportCourseId, recallModeLabel, resolveCourse} from './courses.js';
 
-const APP_VERSION = '0.4.0';
-const PROGRESS_KEY = 'devanagari.progress';
+const APP_VERSION = '0.5.0';
+const course = resolveCourse(typeof window !== 'undefined' ? window.COURSE : undefined);
+const PROGRESS_KEY = course.progressKey;
 
 const state = {
     data: null,
@@ -19,6 +21,7 @@ const state = {
     correct: 0,
     unlocked: [],
     cardShownMs: 0,
+    codepoints: words.CODEPOINT_SLUGS,
 };
 
 const $ = id => document.getElementById(id);
@@ -44,6 +47,16 @@ function isPhrase(glyph) {
     return glyph.includes(' ');
 }
 
+function withDir(node) {
+    if (course.rtl)
+        node.dir = 'rtl';
+    return node;
+}
+
+function glyphEl(glyph, className = glyphClass(glyph)) {
+    return withDir(el('p', className, glyph));
+}
+
 // No click chime here: a chime layered under speech muddies the clip.
 function playButton(slug) {
     if (!audio.resolveClip(slug))
@@ -63,7 +76,11 @@ function loadProgress() {
     } catch {
         // Corrupt storage: start fresh; "Reset progress" stays available on home.
     }
-    return sched.initProgress();
+    return freshProgress();
+}
+
+function freshProgress() {
+    return {...sched.initProgress(), selectedGroup: state.data.groups[0].id};
 }
 
 function saveProgress() {
@@ -114,7 +131,7 @@ function renderHome() {
         const shown = phrases ? 6 : 40;
         const preview = group.chars.slice(0, shown).map(c => c.glyph).join(phrases ? ' · ' : ' ')
             + (group.chars.length > shown ? ' …' : '');
-        row.append(top, el('div', 'group-glyphs', preview), bar);
+        row.append(top, withDir(el('div', 'group-glyphs', preview)), bar);
         if (!locked) {
             row.addEventListener('click', () => {
                 sound.click();
@@ -127,6 +144,19 @@ function renderHome() {
     });
     renderMaxNew();
     renderRecallMode();
+    renderCourseLinks();
+}
+
+function renderCourseLinks() {
+    const nav = $('course-links');
+    nav.textContent = '';
+    for (const other of Object.values(COURSES)) {
+        if (other.id === course.id)
+            continue;
+        const link = el('a', 'btn-link', other.title);
+        link.href = other.page;
+        nav.append(link);
+    }
 }
 
 function renderMaxNew() {
@@ -138,7 +168,8 @@ function saysFirst() {
 }
 
 function renderRecallMode() {
-    $('btn-recall-mode').textContent = saysFirst() ? 'English → Nepali' : 'Nepali → English';
+    $('btn-recall-mode').textContent
+        = recallModeLabel(state.progress.settings.recallMode, course);
 }
 
 function toggleRecallMode() {
@@ -174,7 +205,7 @@ function startSession() {
     state.queue = words.insertWordCards(
         sched.buildSession(state.progress, state.data, Date.now(),
             {groupIndex, maxNew: state.progress.settings.maxNew}),
-        words.pickWords(state.words, state.progress));
+        words.pickWords(state.words, state.progress, 2, state.codepoints));
     state.pos = 0;
     state.asked = 0;
     state.correct = 0;
@@ -224,7 +255,7 @@ function showMeet(item) {
     const {stage, actions} = clearQuizZones();
     const tag = isPhrase(c.glyph) ? 'new phrase'
         : state.groupBySlug.get(item.slug)?.quiz === 'recall' ? 'new word' : 'new character';
-    stage.append(el('p', 'tag', tag), el('p', glyphClass(c.glyph), c.glyph));
+    stage.append(el('p', 'tag', tag), glyphEl(c.glyph));
     if (isPhrase(c.glyph) || state.groupBySlug.get(item.slug)?.quiz === 'recall') {
         stage.append(el('p', 'meaning-big', c.note), el('p', 'note', c.roman));
     } else {
@@ -255,12 +286,12 @@ function showRecall(item) {
     const say = saysFirst();
     const kind = isPhrase(c.glyph) ? 'phrase' : 'word';
     stage.append(el('p', 'tag', say ? `say the ${kind}` : kind),
-        say ? el('p', 'meaning-big', c.note) : el('p', glyphClass(c.glyph), c.glyph));
+        say ? el('p', 'meaning-big', c.note) : glyphEl(c.glyph));
     const btn = el('button', 'btn btn-primary', 'Continue');
     btn.addEventListener('click', () => {
         sound.click();
         if (say)
-            stage.append(el('p', glyphClass(c.glyph), c.glyph), el('p', 'note', c.roman));
+            stage.append(glyphEl(c.glyph), el('p', 'note', c.roman));
         else
             stage.append(el('p', 'meaning-big', c.note), el('p', 'note', c.roman));
         // Only after the reveal: hearing the clip is hearing the answer.
@@ -293,7 +324,7 @@ function showRecall(item) {
 function showWord(word) {
     sound.newChar();
     const {stage, actions} = clearQuizZones();
-    stage.append(el('p', 'tag', 'word'), el('p', 'glyph glyph-word', word.d));
+    stage.append(el('p', 'tag', 'word'), glyphEl(word.d, 'glyph glyph-word'));
     const btn = el('button', 'btn btn-primary', 'Continue');
     let revealed = false;
     btn.addEventListener('click', () => {
@@ -317,7 +348,7 @@ function showQuestion(item) {
     const c = state.bySlug.get(item.slug);
     const options = sched.shuffle([c.slug, ...sched.pickDistractors(state.data, state.progress, c.slug)]);
     const {stage, actions} = clearQuizZones();
-    stage.append(el('p', glyphClass(c.glyph), c.glyph));
+    stage.append(glyphEl(c.glyph));
     const grid = el('div', 'options');
     const buttons = new Map();
     for (const slug of options) {
@@ -393,7 +424,7 @@ async function shareApp() {
     const url = location.href;
     if (navigator.share) {
         try {
-            await navigator.share({title: 'devanagari', url});
+            await navigator.share({title: course.title, url});
         } catch {
             // user dismissed the share sheet
         }
@@ -409,8 +440,8 @@ async function shareApp() {
 
 async function exportProgress() {
     sound.click();
-    const text = JSON.stringify(state.progress, null, 2);
-    const name = `devanagari-progress-${stats.localDayString(Date.now())}.txt`;
+    const text = JSON.stringify({course: course.id, ...state.progress}, null, 2);
+    const name = `${course.id}-progress-${stats.localDayString(Date.now())}.txt`;
     // .txt + text/plain so iPhone Files previews the backup.
     const file = new File([text], name, {type: 'text/plain'});
     if (navigator.canShare?.({files: [file]})) {
@@ -441,6 +472,11 @@ async function importProgress(file) {
         flashButton('btn-import', 'newer app needed');
         return;
     }
+    if (exportCourseId(parsed) !== course.id) {
+        flashButton('btn-import', `${exportCourseId(parsed)} file`);
+        return;
+    }
+    delete parsed.course;
     const normalized = sched.normalizeProgress(parsed, state.data);
     if (!normalized) {
         flashButton('btn-import', 'invalid file');
@@ -459,7 +495,7 @@ function resetProgress() {
     if (!confirm('Delete all learning progress?'))
         return;
     localStorage.removeItem(PROGRESS_KEY);
-    state.progress = sched.initProgress();
+    state.progress = freshProgress();
     openAllGroups(state.progress);
     renderHome();
 }
@@ -487,18 +523,23 @@ async function checkUpdates() {
 }
 
 async function init() {
+    document.title = `${course.title} — ${course.tagline}`;
+    $('brand').textContent = course.title;
+    $('tagline').textContent = course.tagline;
     try {
-        const response = await fetch('characters.json');
+        const response = await fetch(course.dataFile);
         state.data = await response.json();
     } catch {
-        $('loading').textContent = 'Failed to load characters.json';
+        $('loading').textContent = `Failed to load ${course.dataFile}`;
         return;
     }
     $('loading').remove();
     state.bySlug = new Map(state.data.groups.flatMap(g => g.chars).map(c => [c.slug, c]));
     state.groupBySlug = new Map(state.data.groups.flatMap(g => g.chars.map(c => [c.slug, g])));
+    if (course.id !== 'devanagari')
+        state.codepoints = words.buildCodepointMap(state.data.groups);
     try {
-        const parsed = await (await fetch('words.json')).json();
+        const parsed = await (await fetch(course.wordsFile)).json();
         if (Array.isArray(parsed?.words))
             state.words = parsed.words;
     } catch {

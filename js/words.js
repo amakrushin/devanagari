@@ -55,22 +55,39 @@ export const CONJUNCT_SLUGS = new Map([
 // Longest conjunct sequence in codepoints (consonant + virama + consonant).
 const CONJUNCT_LENGTH = 3;
 
+// Builds the codepoint map for any course from its taught groups: every
+// non-whitespace codepoint of a glyph maps to that glyph's slug, so a
+// two-case "А а" glyph teaches both letters. Conjunct-style multi-codepoint
+// glyphs are left to the Devanagari tables above.
+export function buildCodepointMap(groups) {
+    const map = new Map();
+    for (const c of groups.flatMap(g => g.chars)) {
+        for (const cp of [...c.glyph.normalize('NFC')]) {
+            if (!/\s/.test(cp) && !map.has(cp))
+                map.set(cp, c.slug);
+        }
+    }
+    return map;
+}
+
 // Returns the in-order slugs a reader needs for the word, duplicates included
 // ('पानी' -> ['pa', 'aa', 'na', 'ii']), or null when anything in the word is
 // not taught yet (other conjuncts, chandrabindu, nukta, digits, Latin, ...).
-export function decomposeWord(word) {
+export function decomposeWord(word, map = CODEPOINT_SLUGS) {
     if (!word)
         return null;
     const cps = [...word.normalize('NFC')];
     const slugs = [];
+    const conjuncts = map === CODEPOINT_SLUGS;
     for (let i = 0; i < cps.length;) {
-        const conjunct = CONJUNCT_SLUGS.get(cps.slice(i, i + CONJUNCT_LENGTH).join(''));
+        const conjunct = conjuncts
+            ? CONJUNCT_SLUGS.get(cps.slice(i, i + CONJUNCT_LENGTH).join('')) : undefined;
         if (conjunct) {
             slugs.push(conjunct);
             i += CONJUNCT_LENGTH;
             continue;
         }
-        const slug = CODEPOINT_SLUGS.get(cps[i]);
+        const slug = map.get(cps[i]);
         if (!slug)
             return null;
         slugs.push(slug);
@@ -83,8 +100,8 @@ export function decomposeWord(word) {
 // inherent a, a matra replaces it with the vowel's roman, and the signs append
 // theirs ('क्षेत्र' -> 'chhyetra' because the app teaches क्ष as chhya).
 // `chars` is the characters.json char list; returns null for unreadable words.
-export function romanizeWord(word, chars) {
-    const slugs = decomposeWord(word);
+export function romanizeWord(word, chars, map = CODEPOINT_SLUGS) {
+    const slugs = decomposeWord(word, map);
     if (!slugs)
         return null;
     const romanBySlug = new Map(chars.map(c => [c.slug, c.roman]));
@@ -93,14 +110,15 @@ export function romanizeWord(word, chars) {
     for (let i = 0, s = 0; i < cps.length; s += 1) {
         const cp = cps[i];
         const roman = romanBySlug.get(slugs[s]);
-        if (CONJUNCT_SLUGS.has(cps.slice(i, i + CONJUNCT_LENGTH).join(''))) {
+        const cluster = cps.slice(i, i + CONJUNCT_LENGTH).join('');
+        if (map === CODEPOINT_SLUGS && CONJUNCT_SLUGS.has(cluster)) {
             out += roman;
             i += CONJUNCT_LENGTH;
             continue;
         }
         if (cp === 'ं' || cp === 'ः')
             out += roman.slice(1);          // aṁ/aḥ carry the sign after the a
-        else if (i > 0 && CODEPOINT_SLUGS.get(cp) === slugs[s] && isMatra(cp))
+        else if (i > 0 && map.get(cp) === slugs[s] && isMatra(cp))
             out = out.slice(0, -1) + roman; // matra replaces the inherent a
         else
             out += roman;
@@ -119,7 +137,7 @@ function isMatra(cp) {
 // first in dictionary (frequency) order; when the eligible pool is exhausted,
 // the oldest-shown words recycle so early learners keep getting practice.
 // Deterministic: no randomness.
-export function pickWords(words, progress, count = 2) {
+export function pickWords(words, progress, count = 2, map = CODEPOINT_SLUGS) {
     const learned = new Set(Object.entries(progress.chars ?? {})
         .filter(([, st]) => st.box >= LEARNED_BOX)
         .map(([slug]) => slug));
@@ -127,7 +145,7 @@ export function pickWords(words, progress, count = 2) {
     const unseen = [];
     const seen = [];
     for (const word of words) {
-        const slugs = decomposeWord(word.d);
+        const slugs = decomposeWord(word.d, map);
         if (!slugs || !slugs.every(slug => learned.has(slug)))
             continue;
         if (shown[word.d] === undefined) {

@@ -1,0 +1,99 @@
+{
+    "version": 1,
+    "groups": [
+        {
+            "id": "letters1",
+            "label": "Letters 1",
+            "chars": [
+                {"glyph": "א", "roman": "a (silent)", "slug": "alef", "note": "alef — carries the vowel, no sound of its own"},
+                {"glyph": "ב", "roman": "b / v", "slug": "bet", "note": "bet — b with a dot inside, v without"},
+                {"glyph": "ג", "roman": "g", "slug": "gimel", "note": "gimel"},
+                {"glyph": "ד", "roman": "d", "slug": "dalet", "note": "dalet"},
+                {"glyph": "ה", "roman": "h", "slug": "he", "note": "he — silent at the end of a word"},
+                {"glyph": "ו", "roman": "v / o / u", "slug": "vav", "note": "vav — v as a consonant, o or u as a vowel"},
+                {"glyph": "ז", "roman": "z", "slug": "zayin", "note": "zayin"},
+                {"glyph": "ח", "roman": "kh", "slug": "het", "note": "het — throaty kh, like Scottish loch"}
+            ]
+        },
+        {
+            "id": "letters2",
+            "label": "Letters 2",
+            "chars": [
+                {"glyph": "ט", "roman": "t", "slug": "tet", "note": "tet"},
+                {"glyph": "י", "roman": "y / i", "slug": "yod", "note": "yod — y as a consonant, i as a vowel"},
+                {"glyph": "כ", "roman": "k / kh", "slug": "kaf", "note": "kaf — k with a dot inside, kh without"},
+                {"glyph": "ל", "roman": "l", "slug": "lamed", "note": "lamed"},
+                {"glyph": "מ", "roman": "m", "slug": "mem", "note": "mem"},
+                {"glyph": "נ", "roman": "n", "slug": "nun", "note": "nun"},
+                {"glyph": "ס", "roman": "s", "slug": "samekh", "note": "samekh"}
+            ]
+        },
+        {
+            "id": "letters3",
+            "label": "Letters 3",
+            "chars": [
+                {"glyph": "ע", "roman": "a (guttural)", "slug": "ayin", "note": "ayin — silent in most modern speech"},
+                {"glyph": "פ", "roman": "p / f", "slug": "pe", "note": "pe — p with a dot inside, f without"},
+                {"glyph": "צ", "roman": "ts", "slug": "tsadi", "note": "tsadi"},
+                {"glyph": "ק", "roman": "k", "slug": "qof", "note": "qof — same sound as כ with a dot"},
+                {"glyph": "ר", "roman": "r", "slug": "resh", "note": "resh"},
+                {"glyph": "ש", "roman": "sh / s", "slug": "shin", "note": "shin — sh with the dot on the right, s on the left"},
+                {"glyph": "ת", "roman": "t", "slug": "tav", "note": "tav — same sound as ט"}
+            ]
+        },
+        {
+            "id": "finals",
+            "label": "Final forms",
+            "chars": [
+                {"glyph": "ך", "roman": "kh", "slug": "kaffinal", "note": "final kaf — the shape of כ at the end of a word"},
+                {"glyph": "ם", "roman": "m", "slug": "memfinal", "note": "final mem — the shape of מ at the end of a word"},
+                {"glyph": "ן", "roman": "n", "slug": "nunfinal", "note": "final nun — the shape of נ at the end of a word"},
+                {"glyph": "ף", "roman": "f", "slug": "pefinal", "note": "final pe — the shape of פ at the end of a word"},
+                {"glyph": "ץ", "roman": "ts", "slug": "tsadifinal", "note": "final tsadi — the shape of צ at the end of a word"}
+            ]
+        },
+        {
+            "id": "hewords",
+            "label": "Words",
+            "quiz": "recall",
+            "chars": [
+                {"glyph": "שלום", "roman": "shalom", "slug": "wshalom", "note": "hello, peace"},
+                {"glyph": "בית", "roman": "bayit", "slug": "wbayit", "note": "house"},
+                {"glyph": "מים", "roman": "mayim", "slug": "wmayim", "note": "water"},
+                {"glyph": "אבא", "roman": "aba", "slug": "waba", "note": "father"},
+                {"glyph": "אמא", "roman": "ima", "slug": "wima", "note": "mother"},
+                {"glyph": "ילד", "roman": "yeled", "slug": "wyeled", "note": "boy"},
+                {"glyph": "ספר", "roman": "sefer", "slug": "wsefer", "note": "book"},
+                {"glyph": "כן", "roman": "ken", "slug": "wken", "note": "yes"},
+                {"glyph": "לא", "roman": "lo", "slug": "wlo", "note": "no"},
+                {"glyph": "תודה", "roman": "toda", "slug": "wtoda", "note": "thank you"},
+                {"glyph": "יום", "roman": "yom", "slug": "wyom", "note": "day"},
+                {"glyph": "לילה", "roman": "layla", "slug": "wlayla", "note": "night"},
+                {"glyph": "שמש", "roman": "shemesh", "slug": "wshemesh", "note": "sun"},
+                {"glyph": "ירח", "roman": "yareakh", "slug": "wyareakh", "note": "moon"},
+                {"glyph": "לחם", "roman": "lekhem", "slug": "wlekhem", "note": "bread"},
+                {"glyph": "חלב", "roman": "khalav", "slug": "wkhalav", "note": "milk"},
+                {"glyph": "דג", "roman": "dag", "slug": "wdag", "note": "fish"},
+                {"glyph": "כלב", "roman": "kelev", "slug": "wkelev", "note": "dog"},
+                {"glyph": "חתול", "roman": "khatul", "slug": "wkhatul", "note": "cat"},
+                {"glyph": "עיר", "roman": "ir", "slug": "wir", "note": "city"},
+                {"glyph": "דרך", "roman": "derekh", "slug": "wderekh", "note": "road, way"},
+                {"glyph": "אור", "roman": "or", "slug": "wor", "note": "light"},
+                {"glyph": "שם", "roman": "shem", "slug": "wshem", "note": "name"},
+                {"glyph": "טוב", "roman": "tov", "slug": "wtov", "note": "good"},
+                {"glyph": "גדול", "roman": "gadol", "slug": "wgadol", "note": "big"},
+                {"glyph": "קטן", "roman": "katan", "slug": "wkatan", "note": "small"},
+                {"glyph": "ארץ", "roman": "eretz", "slug": "weretz", "note": "land, country"},
+                {"glyph": "עץ", "roman": "etz", "slug": "wetz", "note": "tree"},
+                {"glyph": "סוף", "roman": "sof", "slug": "wsof", "note": "end"},
+                {"glyph": "רגל", "roman": "regel", "slug": "wregel", "note": "foot, leg"},
+                {"glyph": "זמן", "roman": "zman", "slug": "wzman", "note": "time"},
+                {"glyph": "פה", "roman": "po", "slug": "wpo", "note": "here"},
+                {"glyph": "צבע", "roman": "tseva", "slug": "wtseva", "note": "color"},
+                {"glyph": "אף", "roman": "af", "slug": "waf", "note": "nose"},
+                {"glyph": "משפחה", "roman": "mishpakha", "slug": "wmishpakha", "note": "family"}
+            ]
+        }
+    ],
+    "confusables": [["bet", "kaf"], ["dalet", "resh"], ["he", "het"], ["het", "tav"], ["he", "tav"], ["vav", "nunfinal"], ["memfinal", "samekh"]]
+}
