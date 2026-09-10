@@ -13,8 +13,8 @@ serves three courses, each installable as its own app:
 
 - Static, no build step.
 - Install on iPhone: open the course page in Safari, Share, Add to Home Screen.
-  Each course installs as a separate icon; the footer of every course links
-  to the other two.
+  Each course installs as a separate icon; the flags at the top of every
+  course page switch to the other two.
 - Works offline after the first visit; progress is stored in the browser per
   course. A saved progress file names its course and loads only into that one.
 

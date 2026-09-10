@@ -151,15 +151,15 @@ body {
     font-size: 0.85rem;
 }
 
+/* Flags of the other courses, above the title. */
 .course-links {
     display: flex;
     justify-content: center;
-    gap: 1.2rem;
-    font-size: 0.85rem;
-    color: var(--muted);
+    gap: 1.5rem;
+    font-size: 1.8rem;
+    line-height: 1;
 }
 .course-links a { text-decoration: none; }
-.course-links a::before { content: '→ '; }
 
 [dir="rtl"].glyph, [dir="rtl"].group-glyphs { unicode-bidi: isolate; }
 

@@ -17,9 +17,13 @@ export const PROGRESS_VERSION = 2;
 // (a review-only session).
 export const MAX_NEW_LIMIT = 10;
 
-const DEFAULT_MAX_NEW = 3;
+const DEFAULT_MAX_NEW = MAX_NEW_LIMIT / 2;
 const DEFAULT_RECALL_MODE = 'read';
 export const RECALL_MODES = ['read', 'say'];
+
+// Session order is a weighted shuffle: heavier items tend to come earlier
+// without being pinned to the front, so no two sessions look alike.
+export const ORDER_WEIGHTS = {hot: 1.5, due: 1.25, rest: 1};
 
 // v0/v1 stored the selected course as a group index; this was the only group
 // order ever shipped with numeric selection.
@@ -121,7 +125,8 @@ export function tryUnlock(progress, data) {
     return data.groups[progress.activeGroup];
 }
 
-export function buildSession(progress, data, now, {size = 15, maxNew = 3, maxHot = 5, groupIndex = null} = {}) {
+export function buildSession(progress, data, now,
+    {size = 15, maxNew = 3, maxHot = 5, groupIndex = null, random = Math.random} = {}) {
     const open = data.groups.slice(0, progress.activeGroup + 1);
     const scoped = groupIndex == null ? open : open.filter((_, idx) => idx === groupIndex);
     const unlocked = scoped.flatMap(group => group.chars).map(c => c.slug);
@@ -131,20 +136,20 @@ export function buildSession(progress, data, now, {size = 15, maxNew = 3, maxHot
 
     const picked = new Set();
     const queue = [];
-    const push = (slug, isNew = false) => {
+    const push = (slug, weight, isNew = false) => {
         if (queue.length >= size || picked.has(slug))
             return false;
         picked.add(slug);
-        queue.push({slug, isNew});
+        queue.push({slug, isNew, weight});
         return true;
     };
 
     met.filter(slug => progress.chars[slug].hotLeft > 0)
         .slice(0, maxHot)
-        .forEach(slug => push(slug));
+        .forEach(slug => push(slug, ORDER_WEIGHTS.hot));
     met.filter(slug => progress.chars[slug].due <= now)
         .sort(byWeakness)
-        .forEach(slug => push(slug));
+        .forEach(slug => push(slug, ORDER_WEIGHTS.due));
     // New characters round-robin across the groups in scope; within each group
     // the canonical data order, reshuffled per profile when a seed is present.
     const introPools = scoped
@@ -156,12 +161,29 @@ export function buildSession(progress, data, now, {size = 15, maxNew = 3, maxHot
             if (introduced >= maxNew)
                 break;
             const c = pool.shift();
-            if (c && push(c.slug, true))
+            if (c && push(c.slug, ORDER_WEIGHTS.rest, true))
                 introduced += 1;
         }
     }
-    [...met].sort(byWeakness).forEach(slug => push(slug));
-    return queue;
+    [...met].sort(byWeakness).forEach(slug => push(slug, ORDER_WEIGHTS.rest));
+    return weightedShuffle(queue, random).map(({slug, isNew}) => ({slug, isNew}));
+}
+
+// Each item draws a key of random^(1/weight); sorting by the key descending
+// gives heavier items an earlier spot on average. A constant random source
+// degrades to a stable sort by weight, which the tests rely on.
+export function weightedShuffle(items, random = Math.random) {
+    return items
+        .map(item => ({item, key: random() ** (1 / item.weight)}))
+        .sort((a, b) => b.key - a.key)
+        .map(({item}) => item);
+}
+
+// Where the first quiz on a just-met item lands: a random offset within the
+// nearer half of the remaining cards, at least one card later.
+export function reaskOffset(remaining, random = Math.random) {
+    const half = Math.floor(remaining / 2);
+    return half < 1 ? 1 : 1 + Math.floor(random() * half);
 }
 
 // FNV-1a of the slug mixed with the profile seed: a stable random-looking

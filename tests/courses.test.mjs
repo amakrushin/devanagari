@@ -25,13 +25,13 @@ test('UnknownOrMissingIdFallsBackToDevanagari', () => {
 test('EntriesCarryAllShellFields', () => {
     for (const course of Object.values(COURSES)) {
         for (const key of ['page', 'dataFile', 'wordsFile', 'title', 'tagline', 'progressKey',
-            'language'])
+            'language', 'flag'])
             assert.ok(course[key], `${course.id} lacks ${key}`);
     }
 });
 
 test('ProgressKeysDataFilesAndPagesAreUnique', () => {
-    for (const key of ['progressKey', 'dataFile', 'wordsFile', 'page']) {
+    for (const key of ['progressKey', 'dataFile', 'wordsFile', 'page', 'flag']) {
         const values = Object.values(COURSES).map(c => c[key]);
         assert.equal(new Set(values).size, values.length, `duplicate ${key}`);
     }
@@ -49,6 +49,12 @@ test('DevanagariEntryKeepsLegacyValues', () => {
 test('OnlyHebrewIsRightToLeft', () => {
     assert.equal(COURSES.hebrew.rtl, true);
     assert.ok(!COURSES.russian.rtl);
+});
+
+test('OnlyRussianShowsTheReadingFirst', () => {
+    assert.equal(COURSES.russian.readingFirst, true);
+    assert.ok(!COURSES.devanagari.readingFirst);
+    assert.ok(!COURSES.hebrew.readingFirst);
 });
 
 test('RecallModeLabelIsUnchangedForDevanagari', () => {

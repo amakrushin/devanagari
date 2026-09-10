@@ -6,6 +6,19 @@ import * as sched from '../js/scheduler.js';
 const data = JSON.parse(await readFile(new URL('../characters.json', import.meta.url), 'utf8'));
 const NOW = 1_000_000;
 
+// A constant source makes the weighted shuffle a stable sort by weight.
+const STABLE = {random: () => 0.5};
+
+function seeded(seed) {
+    let a = seed >>> 0;
+    return () => {
+        a = (a + 0x6d2b79f5) >>> 0;
+        let t = Math.imul(a ^ (a >>> 15), 1 | a);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 2 ** 32;
+    };
+}
+
 function metProgress(activeGroup, box) {
     const progress = sched.initProgress();
     progress.activeGroup = activeGroup;
@@ -54,7 +67,7 @@ test('BuildSessionInterleavesIntroductionsAcrossGroups', () => {
     const progress = sched.initProgress();
     progress.introSeed = null;
     progress.activeGroup = data.groups.length - 1;
-    const queue = sched.buildSession(progress, data, NOW);
+    const queue = sched.buildSession(progress, data, NOW, STABLE);
     // Round-robin takes the first new character of each open group in order.
     assert.deepEqual(queue.map(item => item.slug), ['a', 'kaa', 'pra']);
     assert.ok(queue.every(item => item.isNew));
@@ -63,7 +76,7 @@ test('BuildSessionInterleavesIntroductionsAcrossGroups', () => {
 test('BuildSessionPutsHotCharactersFirst', () => {
     const progress = metProgress(0, 2);
     sched.markHot(progress, 'uu', NOW);
-    const queue = sched.buildSession(progress, data, NOW);
+    const queue = sched.buildSession(progress, data, NOW, STABLE);
     assert.equal(queue[0].slug, 'uu');
 });
 
@@ -84,7 +97,7 @@ test('BuildSessionPrefersWeakestDueCharacters', () => {
     const progress = metProgress(1, 3);
     progress.chars.a = {box: 0, due: NOW, hotLeft: 0};
     progress.chars.e = {box: 1, due: NOW, hotLeft: 0};
-    const queue = sched.buildSession(progress, data, NOW);
+    const queue = sched.buildSession(progress, data, NOW, STABLE);
     assert.equal(queue[0].slug, 'a');
     assert.equal(queue[1].slug, 'e');
 });
@@ -109,7 +122,7 @@ test('BuildSessionWithGroupIndexIntroducesOnlyItsCharacters', () => {
     const progress = sched.initProgress();
     progress.introSeed = null;
     progress.activeGroup = digitsIndex;
-    const queue = sched.buildSession(progress, data, NOW, {groupIndex: digitsIndex});
+    const queue = sched.buildSession(progress, data, NOW, {groupIndex: digitsIndex, ...STABLE});
     assert.deepEqual(queue.map(item => item.slug), ['d0', 'd1', 'd2']);
     assert.ok(queue.every(item => item.isNew));
 });
@@ -125,12 +138,53 @@ test('BuildSessionHonorsMaxNewOverride', () => {
 test('SeededIntroductionIsStablePerProfile', () => {
     const progress = sched.initProgress();
     progress.introSeed = 424242;
-    const first = sched.buildSession(progress, data, NOW, {maxNew: 10}).map(item => item.slug);
-    const second = sched.buildSession(progress, data, NOW, {maxNew: 10}).map(item => item.slug);
-    assert.deepEqual(first, second);
+    const build = () => sched.buildSession(progress, data, NOW, {maxNew: 10, ...STABLE})
+        .map(item => item.slug);
+    const first = build();
+    assert.deepEqual(first, build());
     progress.introSeed = null;
-    const canonical = sched.buildSession(progress, data, NOW, {maxNew: 10}).map(item => item.slug);
-    assert.notDeepEqual(first, canonical);
+    assert.notDeepEqual(first, build());
+});
+
+test('SessionOrderVariesWithTheRandomSource', () => {
+    const progress = metProgress(1, 0);
+    const build = seed => sched.buildSession(progress, data, NOW, {random: seeded(seed)})
+        .map(item => item.slug);
+    assert.notDeepEqual(build(1), build(2));
+    assert.deepEqual(build(1), build(1));
+});
+
+test('ShuffledSessionKeepsEveryPickedItemOnce', () => {
+    const progress = metProgress(1, 0);
+    const stable = sched.buildSession(progress, data, NOW, STABLE).map(item => item.slug).sort();
+    const shuffled = sched.buildSession(progress, data, NOW, {random: seeded(7)})
+        .map(item => item.slug).sort();
+    assert.deepEqual(shuffled, stable);
+});
+
+test('WeightedShuffleLeansHeavierItemsEarlier', () => {
+    const items = [{slug: 'light', weight: 1}, {slug: 'heavy', weight: 1.5},
+        {slug: 'other', weight: 1}, {slug: 'more', weight: 1}];
+    const random = seeded(99);
+    let heavySum = 0;
+    let lightSum = 0;
+    const runs = 2000;
+    for (let i = 0; i < runs; i += 1) {
+        const order = sched.weightedShuffle(items, random).map(item => item.slug);
+        heavySum += order.indexOf('heavy');
+        lightSum += order.indexOf('light');
+    }
+    assert.ok(heavySum < lightSum, `heavy ${heavySum / runs} vs light ${lightSum / runs}`);
+    assert.ok(heavySum > 0, 'heavier items are not pinned to the front');
+});
+
+test('ReaskOffsetStaysWithinTheNearerHalf', () => {
+    assert.equal(sched.reaskOffset(0, () => 0.99), 1);
+    assert.equal(sched.reaskOffset(1, () => 0.99), 1);
+    assert.equal(sched.reaskOffset(2, () => 0.99), 1);
+    assert.equal(sched.reaskOffset(8, () => 0), 1);
+    assert.equal(sched.reaskOffset(8, () => 0.999), 4);
+    assert.equal(sched.reaskOffset(7, () => 0.999), 3);
 });
 
 test('DifferentSeedsChangeIntroductionOrder', () => {
@@ -138,8 +192,8 @@ test('DifferentSeedsChangeIntroductionOrder', () => {
     one.introSeed = 1;
     const two = sched.initProgress();
     two.introSeed = 2;
-    const queueOne = sched.buildSession(one, data, NOW, {maxNew: 10}).map(item => item.slug);
-    const queueTwo = sched.buildSession(two, data, NOW, {maxNew: 10}).map(item => item.slug);
+    const queueOne = sched.buildSession(one, data, NOW, {maxNew: 10, ...STABLE}).map(item => item.slug);
+    const queueTwo = sched.buildSession(two, data, NOW, {maxNew: 10, ...STABLE}).map(item => item.slug);
     assert.notDeepEqual(queueOne, queueTwo);
 });
 
@@ -191,7 +245,8 @@ test('InitProgressSelectsCharactersById', () => {
 });
 
 test('InitProgressHasDefaultSettings', () => {
-    assert.deepEqual(sched.initProgress().settings, {maxNew: 3, recallMode: 'read'});
+    assert.deepEqual(sched.initProgress().settings, {maxNew: 5, recallMode: 'read'});
+    assert.equal(sched.initProgress().settings.maxNew, sched.MAX_NEW_LIMIT / 2);
 });
 
 test('InitProgressAssignsIntroSeed', () => {
@@ -201,7 +256,7 @@ test('InitProgressAssignsIntroSeed', () => {
 test('NormalizeFillsAndClampsSettings', () => {
     const normalized = value =>
         sched.normalizeProgress({v: 2, chars: {}, settings: value}, data).settings;
-    const defaults = {maxNew: 3, recallMode: 'read'};
+    const defaults = {maxNew: 5, recallMode: 'read'};
     assert.deepEqual(sched.normalizeProgress({v: 2, chars: {}}, data).settings, defaults);
     assert.deepEqual(normalized({maxNew: 99}), {...defaults, maxNew: 10});
     assert.deepEqual(normalized({maxNew: -5}), {...defaults, maxNew: 0});

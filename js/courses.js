@@ -13,6 +13,7 @@ export const COURSES = {
         tagline: 'Nepali alphabet trainer',
         progressKey: 'devanagari.progress',
         language: 'Nepali',
+        flag: '🇳🇵',
     },
     russian: {
         id: 'russian',
@@ -23,6 +24,10 @@ export const COURSES = {
         tagline: 'Russian alphabet trainer',
         progressKey: 'russian.progress',
         language: 'Russian',
+        flag: '🇷🇺',
+        // The learner reads Nepali: word cards show the Devanagari reading
+        // big and the English meaning small.
+        readingFirst: true,
     },
     hebrew: {
         id: 'hebrew',
@@ -33,6 +38,7 @@ export const COURSES = {
         tagline: 'Hebrew alphabet trainer',
         progressKey: 'hebrew.progress',
         language: 'Hebrew',
+        flag: '🇮🇱',
         rtl: true,
     },
 };

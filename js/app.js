@@ -5,7 +5,7 @@ import * as stats from './stats.js';
 import * as audio from './audio.js';
 import {COURSES, exportCourseId, recallModeLabel, resolveCourse} from './courses.js';
 
-const APP_VERSION = '0.5.0';
+const APP_VERSION = '0.6.0';
 const course = resolveCourse(typeof window !== 'undefined' ? window.COURSE : undefined);
 const PROGRESS_KEY = course.progressKey;
 
@@ -55,6 +55,13 @@ function withDir(node) {
 
 function glyphEl(glyph, className = glyphClass(glyph)) {
     return withDir(el('p', className, glyph));
+}
+
+// The answer half of a word card: meaning big and reading small, or the other
+// way round where the learner's own script is the reading.
+function answerLines(meaning, reading) {
+    const [big, small] = course.readingFirst ? [reading, meaning] : [meaning, reading];
+    return [el('p', 'meaning-big', big), el('p', 'note', small)];
 }
 
 // No click chime here: a chime layered under speech muddies the clip.
@@ -153,8 +160,10 @@ function renderCourseLinks() {
     for (const other of Object.values(COURSES)) {
         if (other.id === course.id)
             continue;
-        const link = el('a', 'btn-link', other.title);
+        const link = el('a', null, other.flag);
         link.href = other.page;
+        link.setAttribute('aria-label', other.title);
+        link.title = other.title;
         nav.append(link);
     }
 }
@@ -257,7 +266,7 @@ function showMeet(item) {
         : state.groupBySlug.get(item.slug)?.quiz === 'recall' ? 'new word' : 'new character';
     stage.append(el('p', 'tag', tag), glyphEl(c.glyph));
     if (isPhrase(c.glyph) || state.groupBySlug.get(item.slug)?.quiz === 'recall') {
-        stage.append(el('p', 'meaning-big', c.note), el('p', 'note', c.roman));
+        stage.append(...answerLines(c.note, c.roman));
     } else {
         stage.append(el('p', 'roman-big', c.roman));
         if (c.note)
@@ -272,7 +281,11 @@ function showMeet(item) {
         trackCardTime();
         sched.meetChar(state.progress, c.slug, Date.now());
         saveProgress();
-        showQuiz(item);
+        // The first quiz on the item lands a few cards later, not right away.
+        const remaining = state.queue.length - state.pos - 1;
+        state.queue.splice(state.pos + sched.reaskOffset(remaining), 0, {slug: c.slug, isNew: false});
+        state.pos += 1;
+        step();
     });
     actions.append(btn);
 }
@@ -293,7 +306,7 @@ function showRecall(item) {
         if (say)
             stage.append(glyphEl(c.glyph), el('p', 'note', c.roman));
         else
-            stage.append(el('p', 'meaning-big', c.note), el('p', 'note', c.roman));
+            stage.append(...answerLines(c.note, c.roman));
         // Only after the reveal: hearing the clip is hearing the answer.
         const play = playButton(item.slug);
         if (play)
@@ -334,7 +347,7 @@ function showWord(word) {
             revealed = true;
             state.progress.words[word.d] = Date.now();
             saveProgress();
-            stage.append(el('p', 'meaning-big', word.e), el('p', 'note', word.r));
+            stage.append(...answerLines(word.e, word.r));
             return;
         }
         saveProgress();
