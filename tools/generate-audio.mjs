@@ -1,11 +1,13 @@
-// Generates one mp3 per phrase (slugs x*) from characters.json into audio/,
-// speaking `tts ?? glyph` with Google's Nepali voice, then rewrites
-// audio/manifest.json to list exactly the clips present on disk.
+// Generates one mp3 per audible character of a course into its audio
+// directory, speaking `tts ?? glyph` with Google's voice for the course
+// language, then rewrites the directory's manifest.json to list exactly the
+// clips present on disk. Audible characters are those in groups flagged
+// "audio": true in the course data file.
 // Idempotent and resumable: existing non-empty clips are skipped, so a rerun
-// only fills gaps; clips whose slug left characters.json are deleted.
+// only fills gaps; clips whose slug left the data file are deleted.
 //
 // Setup: python3 -m venv .venv && .venv/bin/pip install gTTS
-// Usage: node tools/generate-audio.mjs
+// Usage: node tools/generate-audio.mjs [courseId]   (default: devanagari)
 //
 // Requests are paced (~1.2 s apart) and retried with backoff so transient
 // rate limits do not abort the run; a truncated download is deleted rather
@@ -16,12 +18,25 @@ import {existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync,
     writeFileSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
 import {promisify} from 'node:util';
+import {COURSES} from '../js/courses.js';
 
 const run = promisify(execFile);
 
-const AUDIO_DIR = fileURLToPath(new URL('../audio/', import.meta.url));
-const MANIFEST_PATH = new URL('../audio/manifest.json', import.meta.url);
-const DATA_PATH = new URL('../characters.json', import.meta.url);
+const courseId = process.argv[2] ?? 'devanagari';
+const course = COURSES[courseId];
+if (!course) {
+    console.error(`unknown course ${courseId}; known: ${Object.keys(COURSES).join(', ')}`);
+    process.exit(1);
+}
+if (!course.audio) {
+    console.error(`course ${courseId} has no audio block in js/courses.js`);
+    process.exit(1);
+}
+
+const ROOT = new URL('../', import.meta.url);
+const AUDIO_DIR = fileURLToPath(new URL(course.audio.dir, ROOT));
+const MANIFEST_PATH = `${AUDIO_DIR}manifest.json`;
+const DATA_PATH = new URL(course.dataFile, ROOT);
 
 const PACE_MS = 1200;
 const RETRY_DELAYS_MS = [5_000, 20_000, 60_000];
@@ -29,17 +44,16 @@ const RETRY_DELAYS_MS = [5_000, 20_000, 60_000];
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 function findSynthesizer() {
-    const local = fileURLToPath(new URL('../.venv/bin/gtts-cli', import.meta.url));
+    const local = fileURLToPath(new URL('.venv/bin/gtts-cli', ROOT));
     if (existsSync(local))
         return local;
     return 'gtts-cli'; // PATH fallback; a missing binary fails the first call below.
 }
 
 const data = JSON.parse(readFileSync(DATA_PATH, 'utf8'));
-const phrases = data.groups.flatMap(g => g.chars)
-    .filter(c => /^x[a-z0-9]+$/.test(c.slug));
+const phrases = data.groups.filter(g => g.audio).flatMap(g => g.chars);
 if (phrases.length === 0) {
-    console.error('no phrase entries (slug x*) found in characters.json');
+    console.error(`no groups flagged "audio": true in ${course.dataFile}`);
     process.exit(1);
 }
 
@@ -49,7 +63,7 @@ const gtts = findSynthesizer();
 async function synthesize(text, path) {
     for (let attempt = 0; ; attempt += 1) {
         try {
-            await run(gtts, [text, '--lang', 'ne', '--output', path]);
+            await run(gtts, [text, '--lang', course.audio.lang, '--output', path]);
             if (statSync(path).size > 0)
                 return;
             throw new Error('empty output file');
@@ -87,7 +101,7 @@ for (const c of phrases) {
 // is rebuilt so it can never point at deleted content.
 const known = new Set(phrases.map(c => c.slug));
 for (const file of readdirSync(AUDIO_DIR)) {
-    const match = /^(x[a-z0-9]+)\.mp3$/.exec(file);
+    const match = /^([a-z0-9]+)\.mp3$/.exec(file);
     if (match && !known.has(match[1])) {
         rmSync(`${AUDIO_DIR}${file}`);
         console.error(`deleted stale clip ${file}`);

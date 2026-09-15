@@ -9,22 +9,27 @@
 // back to playing when the blob arrives.
 
 let clips = new Set();
+let dir = null;
 let player = null;
 let loaded = {slug: null, url: null, promise: null};
 
-export async function loadManifest() {
+export async function loadManifest(courseDir) {
+    if (!courseDir)
+        return;
     try {
-        const response = await fetch('audio/manifest.json');
+        const response = await fetch(`${courseDir}manifest.json`);
         const manifest = await response.json();
-        if (Array.isArray(manifest?.clips))
+        if (Array.isArray(manifest?.clips)) {
             clips = new Set(manifest.clips);
+            dir = courseDir;
+        }
     } catch {
         // No manifest, no buttons; the drill works without audio.
     }
 }
 
 export function resolveClip(slug) {
-    return clips.has(slug) ? `audio/${slug}.mp3` : null;
+    return clips.has(slug) ? `${dir}${slug}.mp3` : null;
 }
 
 export function preload(slug) {

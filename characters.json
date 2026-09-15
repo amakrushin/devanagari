@@ -634,6 +634,7 @@
             "id": "greetings",
             "label": "Greetings & politeness",
             "quiz": "recall",
+            "audio": true,
             "chars": [
                 {"glyph": "नमस्ते हजुर।", "roman": "namaste hajura", "slug": "xnamastehajura", "note": "hello (polite)"},
                 {"glyph": "सञ्चै हुनुहुन्छ?", "roman": "sañchai hunuhunchha?", "slug": "xsanychaihunuhunchha", "note": "how are you?"},
@@ -666,6 +667,7 @@
             "id": "basics",
             "label": "Basics & responses",
             "quiz": "recall",
+            "audio": true,
             "chars": [
                 {"glyph": "ठीक छ।", "roman": "ṭhīka chha", "slug": "xtthiikachha", "note": "okay, fine"},
                 {"glyph": "हुन्छ हजुर।", "roman": "hunchha hajura", "slug": "xhunchhahajura", "note": "yes, sure (polite)"},
@@ -698,6 +700,7 @@
             "id": "shopping",
             "label": "Money & shopping",
             "quiz": "recall",
+            "audio": true,
             "chars": [
                 {"glyph": "यो कति हो?", "roman": "yo kati ho?", "slug": "xyokatiho", "note": "how much is this?"},
                 {"glyph": "यो कति पर्छ?", "roman": "yo kati parchha?", "slug": "xyokatiparchha", "note": "how much does this cost?"},
@@ -735,6 +738,7 @@
             "id": "time",
             "label": "Time & dates",
             "quiz": "recall",
+            "audio": true,
             "chars": [
                 {"glyph": "अहिले कति बज्यो?", "roman": "ahile kati bajyo?", "slug": "xahilekatibajyo", "note": "what time is it now?"},
                 {"glyph": "पाँच बज्यो।", "roman": "pā̃cha bajyo", "slug": "xpaachabajyo", "note": "it is five o'clock"},
@@ -772,6 +776,7 @@
             "id": "directions",
             "label": "Directions & places",
             "quiz": "recall",
+            "audio": true,
             "chars": [
                 {"glyph": "शौचालय कहाँ छ?", "roman": "shauchālaya kahā̃ chha?", "slug": "xshauchaalayakahaachha", "note": "where is the toilet?"},
                 {"glyph": "बाटो कता हो?", "roman": "bāṭo katā ho?", "slug": "xbaattokataaho", "note": "which way is the road?"},
@@ -809,6 +814,7 @@
             "id": "transport",
             "label": "Transport",
             "quiz": "recall",
+            "audio": true,
             "chars": [
                 {"glyph": "यहाँ रोक्नुहोस् न।", "roman": "yahā̃ roknuhos na", "slug": "xyahaaroknuhosna", "note": "please stop here"},
                 {"glyph": "अगाडि रोक्नुहोस्।", "roman": "agāḍi roknuhos", "slug": "xagaaddiroknuhos", "note": "stop ahead"},
@@ -841,6 +847,7 @@
             "id": "food",
             "label": "Food & drink",
             "quiz": "recall",
+            "audio": true,
             "chars": [
                 {"glyph": "मेनु दिनुहोस् न।", "roman": "menu dinuhos na", "slug": "xmenudinuhosna", "note": "the menu please"},
                 {"glyph": "के के छ खानलाई?", "roman": "ke ke chha khānalāī?", "slug": "xkekechhakhaanalaaii", "note": "what is there to eat?"},
@@ -878,6 +885,7 @@
             "id": "smalltalk",
             "label": "People & small talk",
             "quiz": "recall",
+            "audio": true,
             "chars": [
                 {"glyph": "तपाईंको नाम के हो?", "roman": "tapāīṁko nāma ke ho?", "slug": "xtapaaiimkonaamakeho", "note": "what is your name?"},
                 {"glyph": "तपाईंलाई भेटेर खुसी लाग्यो।", "roman": "tapāīṁlāī bheṭera khusī lāgyo", "slug": "xtapaaiimlaaiibhetterakhusiilaagyo", "note": "nice to meet you"},
@@ -910,6 +918,7 @@
             "id": "questions",
             "label": "Question words",
             "quiz": "recall",
+            "audio": true,
             "chars": [
                 {"glyph": "यो के हो?", "roman": "yo ke ho?", "slug": "xyokeho", "note": "what is this?"},
                 {"glyph": "त्यो के हो?", "roman": "tyo ke ho?", "slug": "xtyokeho", "note": "what is that?"},
@@ -942,6 +951,7 @@
             "id": "grammar",
             "label": "Grammar patterns",
             "quiz": "recall",
+            "audio": true,
             "chars": [
                 {"glyph": "जानु अघि भन्नुहोस्।", "roman": "jānu aghi bhannuhos", "slug": "xjaanuaghibhannuhos", "note": "tell me before going"},
                 {"glyph": "खाए पछि जाऔँला।", "roman": "khāe pachhi jāaũlā", "slug": "xkhaaepachhijaaaulaa", "note": "we will go after eating"},
@@ -979,6 +989,7 @@
             "id": "artschool",
             "label": "Art school & craft",
             "quiz": "recall",
+            "audio": true,
             "chars": [
                 {"glyph": "कक्षा कति बजे सुरु हुन्छ?", "roman": "kakshā kati baje suru hunchha?", "slug": "xkakshaakatibajesuruhunchha", "note": "when does the class start?"},
                 {"glyph": "कक्षा कति बजे सकिन्छ?", "roman": "kakshā kati baje sakinchha?", "slug": "xkakshaakatibajesakinchha", "note": "when does the class end?"},

@@ -9,15 +9,19 @@ const chars = data.groups.flatMap(g => g.chars);
 const bySlug = new Map(chars.map(c => [c.slug, c]));
 const group = id => data.groups.find(g => g.id === id);
 const letterGroups = ['vowels', 'consonants1', 'consonants2', 'consonants3', 'signs'];
+const phraseGroups = ['greetings', 'basics', 'shopping', 'directions', 'questions'];
 const letters = letterGroups.flatMap(id => group(id).chars);
+const phrases = phraseGroups.flatMap(id => group(id).chars);
+const nonPhrases = chars.filter(c => !phrases.includes(c));
+const devanagari = JSON.parse(await readFile(new URL('../characters.json', import.meta.url), 'utf8'));
 const map = buildCodepointMap(data.groups);
 
 const NBSP = ' ';
 const ALPHABET = 'абвгдеёжзийклмнопрстуфхцчшщъыьэюя';
 
-test('HasSixGroupsInTeachingOrder', () => {
+test('HasLettersThenWordsThenPhraseTopics', () => {
     assert.equal(data.version, 1);
-    assert.deepEqual(data.groups.map(g => g.id), [...letterGroups, 'ruwords']);
+    assert.deepEqual(data.groups.map(g => g.id), [...letterGroups, 'ruwords', ...phraseGroups]);
 });
 
 test('CoversAllThirtyThreeLettersExactlyOnce', () => {
@@ -40,8 +44,8 @@ test('LettersShowUpperNbspLowerExceptSigns', () => {
     }
 });
 
-test('NoGlyphContainsAPlainSpace', () => {
-    for (const c of chars)
+test('NoLetterOrWordGlyphContainsAPlainSpace', () => {
+    for (const c of nonPhrases)
         assert.ok(!c.glyph.includes(' '), `${c.glyph} would be treated as a phrase`);
 });
 
@@ -70,14 +74,47 @@ test('RomansAreDevanagariAndUniqueWithinEachGroup', () => {
     for (const g of data.groups) {
         const romans = g.chars.map(c => c.roman);
         assert.equal(new Set(romans).size, romans.length, `duplicate roman in ${g.id}`);
+        const shape = phraseGroups.includes(g.id) ? /^[ऀ-ॿ-]+( [ऀ-ॿ-]+)*\??$/ : /^[ऀ-ॿ]+$/;
         for (const roman of romans)
-            assert.match(roman, /^[ऀ-ॿ]+$/, `roman of ${g.id} must be Devanagari: ${roman}`);
+            assert.match(roman, shape, `roman of ${g.id} must be Devanagari: ${roman}`);
+    }
+});
+
+test('PhraseGroupsMirrorTheDevanagariTopics', () => {
+    for (const id of phraseGroups) {
+        const g = group(id);
+        const source = devanagari.groups.find(d => d.id === id);
+        assert.equal(g.quiz, 'recall', `${id} must be a recall group`);
+        assert.equal(g.audio, true, `${id} must be audible`);
+        assert.equal(g.label, source.label, `${id} label`);
+        assert.equal(g.chars.length, source.chars.length, `${id} size`);
+        g.chars.forEach((c, i) => {
+            assert.equal(c.note, source.chars[i].note.replace('nepali', 'russian'), `${c.glyph} note`);
+            assert.match(c.glyph, /^[А-ЯЁ][а-яё-]*( [а-яё-]+)*[.?]$/, `phrase shape of ${c.glyph}`);
+            assert.ok(c.glyph.includes(' '), `${c.glyph} must be multi-word`);
+            assert.equal(c.glyph.endsWith('?'), c.roman.endsWith('?'), `question mark of ${c.glyph}`);
+            assert.match(c.slug, /^p[a-z]+$/, `slug of ${c.glyph}`);
+            assert.equal(c.glyph, c.glyph.normalize('NFC'), `${c.glyph} must be NFC`);
+        });
     }
 });
 
 test('ApproximatedLettersCarryNotes', () => {
     for (const slug of ['y', 'zh', 'ts', 'soft', 'hard', 'shch', 'yo', 'z', 'kh', 'f', 'yot'])
         assert.ok(bySlug.get(slug).note, `${slug} needs a note`);
+});
+
+test('EveryLetterSpeaksItsCyrillicName', () => {
+    for (const c of letters)
+        assert.match(c.tts ?? '', /^[а-яё]+( [а-яё]+)?$/, `${c.slug} needs a letter name in tts`);
+    assert.equal(bySlug.get('yot').tts, 'и краткое');
+    assert.equal(bySlug.get('soft').tts, 'мягкий знак');
+    assert.equal(bySlug.get('hard').tts, 'твёрдый знак');
+});
+
+test('EveryGroupIsAudible', () => {
+    for (const g of data.groups)
+        assert.equal(g.audio, true, `${g.id} must be audible`);
 });
 
 test('ConfusablePairsReferenceExistingSlugs', () => {

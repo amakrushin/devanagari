@@ -1,7 +1,7 @@
-const CACHE_VERSION = 'devanagari-v0.6.0';
+const CACHE_VERSION = 'devanagari-v0.7.0';
 // Clips are immutable per slug and heavy, so they live in their own cache
 // that survives shell version bumps.
-const AUDIO_CACHE = 'devanagari-audio-v1';
+const AUDIO_CACHE = 'devanagari-audio-v2';
 
 const SHELL = [
     './',
@@ -22,7 +22,8 @@ const SHELL = [
     './russian-words.json',
     './hebrew.json',
     './hebrew-words.json',
-    './audio/manifest.json',
+    './audio/devanagari/manifest.json',
+    './audio/russian/manifest.json',
     './manifest.webmanifest',
     './manifest-russian.webmanifest',
     './manifest-hebrew.webmanifest',
@@ -36,13 +37,17 @@ const SHELL = [
 
 // Best-effort: a failed clip download never fails the install and is healed
 // by the runtime caching below on the next online playback.
+const AUDIO_DIRS = ['./audio/devanagari/', './audio/russian/'];
+
 async function prefetchAudio() {
-    const manifest = await (await fetch('./audio/manifest.json')).json();
     const cache = await caches.open(AUDIO_CACHE);
-    await Promise.allSettled(manifest.clips.map(async slug => {
-        const url = `./audio/${slug}.mp3`;
-        if (!await cache.match(url))
-            await cache.add(url);
+    await Promise.allSettled(AUDIO_DIRS.map(async dir => {
+        const manifest = await (await fetch(`${dir}manifest.json`)).json();
+        await Promise.allSettled(manifest.clips.map(async slug => {
+            const url = `${dir}${slug}.mp3`;
+            if (!await cache.match(url))
+                await cache.add(url);
+        }));
     }));
 }
 

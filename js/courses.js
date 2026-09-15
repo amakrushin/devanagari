@@ -14,6 +14,7 @@ export const COURSES = {
         progressKey: 'devanagari.progress',
         language: 'Nepali',
         flag: '🇳🇵',
+        audio: {lang: 'ne', dir: 'audio/devanagari/'},
     },
     russian: {
         id: 'russian',
@@ -28,6 +29,7 @@ export const COURSES = {
         // The learner reads Nepali: word cards show the Devanagari reading
         // big and the English meaning small.
         readingFirst: true,
+        audio: {lang: 'ru', dir: 'audio/russian/'},
     },
     hebrew: {
         id: 'hebrew',

@@ -5,7 +5,7 @@ import * as stats from './stats.js';
 import * as audio from './audio.js';
 import {COURSES, exportCourseId, recallModeLabel, resolveCourse} from './courses.js';
 
-const APP_VERSION = '0.6.0';
+const APP_VERSION = '0.7.0';
 const course = resolveCourse(typeof window !== 'undefined' ? window.COURSE : undefined);
 const PROGRESS_KEY = course.progressKey;
 
@@ -560,7 +560,7 @@ async function init() {
     }
     state.progress = loadProgress();
     openAllGroups(state.progress);
-    audio.loadManifest();
+    audio.loadManifest(course.audio?.dir);
     $('app-version').textContent = `v${APP_VERSION}`;
     $('btn-start').addEventListener('click', startSession);
     $('btn-newless').addEventListener('click', () => bumpMaxNew(-1));

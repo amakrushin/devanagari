@@ -57,6 +57,23 @@ test('OnlyRussianShowsTheReadingFirst', () => {
     assert.ok(!COURSES.hebrew.readingFirst);
 });
 
+test('AudioBlocksNameAVoiceAndADirectory', () => {
+    for (const course of Object.values(COURSES)) {
+        if (!course.audio)
+            continue;
+        assert.match(course.audio.lang, /^[a-z]{2}$/, `${course.id} audio lang`);
+        assert.match(course.audio.dir, /^audio\/[a-z]+\/$/, `${course.id} audio dir`);
+    }
+    const dirs = Object.values(COURSES).filter(c => c.audio).map(c => c.audio.dir);
+    assert.equal(new Set(dirs).size, dirs.length);
+});
+
+test('OnlyDevanagariAndRussianHaveAudio', () => {
+    assert.equal(COURSES.devanagari.audio.lang, 'ne');
+    assert.equal(COURSES.russian.audio.lang, 'ru');
+    assert.equal(COURSES.hebrew.audio, undefined);
+});
+
 test('RecallModeLabelIsUnchangedForDevanagari', () => {
     assert.equal(recallModeLabel('say', COURSES.devanagari), 'English → Nepali');
     assert.equal(recallModeLabel('read', COURSES.devanagari), 'Nepali → English');

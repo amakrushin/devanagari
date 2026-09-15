@@ -111,6 +111,11 @@ test('WordsCarryMeaningAndDecompose', () => {
     }
 });
 
+test('OnlyPhraseGroupsAreAudible', () => {
+    for (const g of data.groups)
+        assert.equal(g.audio === true, PHRASE_GROUP_IDS.includes(g.id), `audio flag on ${g.id}`);
+});
+
 test('PhraseGroupsAreRecallCardsWithMeanings', () => {
     for (const id of PHRASE_GROUP_IDS) {
         const g = group(id);

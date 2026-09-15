@@ -7,7 +7,8 @@ serves three courses, each installable as its own app:
   Latin readings: characters, consonant-vowel combinations, compound
   characters, daily words, digits and practical Kathmandu phrases by topic.
 - `russian.html` — **russian**: the Cyrillic alphabet with Devanagari readings,
-  for Nepali speakers; both cases on every card, plus a group of short words.
+  for Nepali speakers; both cases on every card, a group of short words, and
+  everyday phrases by topic. Every card has a pronunciation clip.
 - `hebrew.html` — **hebrew**: the Hebrew alphabet with Latin readings, final
   forms as their own group, right-to-left cards, plus a group of short words.
 
@@ -21,11 +22,19 @@ serves three courses, each installable as its own app:
 A course is a `<name>.json` character file, an optional `<name>-words.json`
 daily-word file, a manifest, and an entry in `js/courses.js`.
 
+Pronunciation clips are pre-generated mp3 files, one directory per course
+(`audio/devanagari/`, `audio/russian/`), each with a `manifest.json` listing
+the clips on disk. A course opts in with an `audio: {lang, dir}` block in
+`js/courses.js`; within its data file, groups flagged `"audio": true` get a
+clip per character, speaking the `tts` field when present and the glyph
+otherwise. Devanagari voices its phrase groups; Russian voices letters (by
+name), words and phrases.
+
 ## Development
 
     python -m http.server 8000    # then open http://localhost:8000
     node --test                   # scheduler, course and data tests
-    node tools/generate-audio.mjs # regenerate phrase audio (needs .venv with gTTS; see tool header)
+    node tools/generate-audio.mjs [course] # regenerate that course's clips, default devanagari (needs .venv with gTTS; see tool header)
     node tools/generate-icons.mjs # regenerate app icons after a version bump (needs ImageMagick)
 
 Each version gets its own icon background color (derived from APP_VERSION in
